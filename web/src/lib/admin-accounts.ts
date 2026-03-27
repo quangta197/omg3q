@@ -33,6 +33,38 @@ export type AdminAccountListItem = {
   nationName: string | null;
 };
 
+export type AdminAccountStatus = AdminAccountListItem["status"];
+
+export type AdminAccountListFilters = {
+  search?: string;
+  status?: AdminAccountStatus;
+  featured?: "featured" | "standard";
+  serverId?: string;
+  nationId?: string;
+  sort?: "updated_desc" | "price_desc" | "price_asc" | "title_asc";
+  page?: number;
+  limit?: number;
+};
+
+export type AdminAccountListResult = {
+  items: AdminAccountListItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  appliedFilters: Required<Pick<AdminAccountListFilters, "page" | "limit" | "sort">> &
+    Omit<AdminAccountListFilters, "page" | "limit" | "sort">;
+};
+
+export type AdminAccountOverview = {
+  total: number;
+  featured: number;
+  available: number;
+  reserved: number;
+  sold: number;
+  hidden: number;
+};
+
 export type AdminAccountEditorRecord = {
   id: string;
   slug: string;
@@ -84,6 +116,66 @@ function getRelationName(relation: RelationRecord) {
   }
 
   return relation.name ?? null;
+}
+
+function mapAdminListItem(
+  item: unknown
+): AdminAccountListItem {
+  const row = item as {
+    id: string;
+    slug: string;
+    title: string;
+    price: number | string;
+    status: "available" | "reserved" | "sold" | "hidden";
+    is_featured: boolean | null;
+    updated_at: string | null;
+    thumbnail_url: string | null;
+    servers: RelationRecord;
+    nations: RelationRecord;
+  };
+
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    price: toNumber(row.price),
+    status: row.status,
+    isFeatured: Boolean(row.is_featured),
+    updatedAt: row.updated_at,
+    thumbnailUrl: row.thumbnail_url,
+    serverName: getRelationName(row.servers),
+    nationName: getRelationName(row.nations),
+  };
+}
+
+function normalizeAdminSearch(value?: string) {
+  const normalized = value?.trim();
+
+  if (!normalized) {
+    return undefined;
+  }
+
+  return normalized.replace(/[%:,]/g, " ").trim() || undefined;
+}
+
+function normalizeAdminPagination(filters: AdminAccountListFilters) {
+  const limit = Math.max(10, Math.min(filters.limit ?? 20, 100));
+  const page = Math.max(1, filters.page ?? 1);
+
+  return {
+    page,
+    limit,
+    from: (page - 1) * limit,
+    to: page * limit - 1,
+  };
+}
+
+function normalizeAdminSort(sort?: AdminAccountListFilters["sort"]) {
+  if (sort === "price_desc" || sort === "price_asc" || sort === "title_asc") {
+    return sort;
+  }
+
+  return "updated_desc";
 }
 
 function getStorageBucketName() {
@@ -179,9 +271,52 @@ export async function getAdminAccountFormOptions(): Promise<AdminAccountFormOpti
   };
 }
 
-export async function getAdminAccountsList(): Promise<AdminAccountListItem[]> {
+export async function getAdminAccountsOverview(): Promise<AdminAccountOverview> {
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
+    .from("accounts")
+    .select("status, is_featured");
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []).reduce<AdminAccountOverview>(
+    (stats, item) => {
+      const row = item as {
+        status: AdminAccountStatus;
+        is_featured: boolean | null;
+      };
+
+      stats.total += 1;
+
+      if (row.is_featured) {
+        stats.featured += 1;
+      }
+
+      stats[row.status] += 1;
+
+      return stats;
+    },
+    {
+      total: 0,
+      featured: 0,
+      available: 0,
+      reserved: 0,
+      sold: 0,
+      hidden: 0,
+    }
+  );
+}
+
+export async function getAdminAccountsList(
+  filters: AdminAccountListFilters = {}
+): Promise<AdminAccountListResult> {
+  const { page, limit, from, to } = normalizeAdminPagination(filters);
+  const search = normalizeAdminSearch(filters.search);
+  const sort = normalizeAdminSort(filters.sort);
+  const supabase = getSupabaseAdminClient();
+  let query = supabase
     .from("accounts")
     .select(`
       id,
@@ -194,40 +329,65 @@ export async function getAdminAccountsList(): Promise<AdminAccountListItem[]> {
       thumbnail_url,
       servers:server_id(name),
       nations:nation_id(name)
-    `)
-    .order("updated_at", { ascending: false });
+    `, { count: "exact" });
+
+  if (search) {
+    query = query.or(`title.ilike.*${search}*,slug.ilike.*${search}*`);
+  }
+
+  if (filters.status) {
+    query = query.eq("status", filters.status);
+  }
+
+  if (filters.featured === "featured") {
+    query = query.eq("is_featured", true);
+  } else if (filters.featured === "standard") {
+    query = query.eq("is_featured", false);
+  }
+
+  if (filters.serverId) {
+    query = query.eq("server_id", filters.serverId);
+  }
+
+  if (filters.nationId) {
+    query = query.eq("nation_id", filters.nationId);
+  }
+
+  if (sort === "price_desc") {
+    query = query.order("price", { ascending: false });
+  } else if (sort === "price_asc") {
+    query = query.order("price", { ascending: true });
+  } else if (sort === "title_asc") {
+    query = query.order("title", { ascending: true });
+  } else {
+    query = query.order("updated_at", { ascending: false });
+  }
+
+  const { data, error, count } = await query.range(from, to);
 
   if (error) {
     throw new Error(error.message);
   }
 
-  return (data ?? []).map((item) => {
-    const row = item as {
-      id: string;
-      slug: string;
-      title: string;
-      price: number | string;
-      status: "available" | "reserved" | "sold" | "hidden";
-      is_featured: boolean | null;
-      updated_at: string | null;
-      thumbnail_url: string | null;
-      servers: RelationRecord;
-      nations: RelationRecord;
-    };
+  const total = count ?? 0;
 
-    return {
-      id: row.id,
-      slug: row.slug,
-      title: row.title,
-      price: toNumber(row.price),
-      status: row.status,
-      isFeatured: Boolean(row.is_featured),
-      updatedAt: row.updated_at,
-      thumbnailUrl: row.thumbnail_url,
-      serverName: getRelationName(row.servers),
-      nationName: getRelationName(row.nations),
-    };
-  });
+  return {
+    items: (data ?? []).map(mapAdminListItem),
+    total,
+    page,
+    limit,
+    totalPages: total > 0 ? Math.ceil(total / limit) : 0,
+    appliedFilters: {
+      search,
+      status: filters.status,
+      featured: filters.featured,
+      serverId: filters.serverId,
+      nationId: filters.nationId,
+      sort,
+      page,
+      limit,
+    },
+  };
 }
 
 export async function getAdminAccountById(

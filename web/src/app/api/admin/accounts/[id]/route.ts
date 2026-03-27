@@ -1,6 +1,8 @@
 import { revalidatePath } from "next/cache";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getAdminAccountById, replaceAccountImages } from "@/lib/admin-accounts";
+import { authorizeAdminApiRequest } from "@/lib/admin-session";
 import { getSupabaseAdminClient, hasSupabaseServiceRole } from "@/lib/supabase-admin";
 
 function normalizeText(formData: FormData, key: string) {
@@ -48,7 +50,13 @@ type RouteProps = {
   params: Promise<{ id: string }>;
 };
 
-export async function PATCH(request: Request, { params }: RouteProps) {
+export async function PATCH(request: NextRequest, { params }: RouteProps) {
+  const authResult = await authorizeAdminApiRequest(request);
+
+  if (authResult instanceof NextResponse) {
+    return authResult;
+  }
+
   if (!hasSupabaseServiceRole()) {
     return NextResponse.json(
       {

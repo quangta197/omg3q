@@ -76,6 +76,13 @@ CREATE TABLE contact_requests (
     processed_at TIMESTAMPTZ
 );
 
+CREATE TABLE site_settings (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    key VARCHAR(100) NOT NULL UNIQUE,
+    value JSONB NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE INDEX idx_accounts_server ON accounts(server_id) WHERE status = 'available';
 CREATE INDEX idx_accounts_nation ON accounts(nation_id) WHERE status = 'available';
 CREATE INDEX idx_accounts_power ON accounts(power_score) WHERE status = 'available';
@@ -95,6 +102,7 @@ ALTER TABLE account_heroes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE servers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE nations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contact_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Public read accounts" ON accounts
     FOR SELECT USING (status IN ('available', 'reserved', 'sold'));
@@ -113,3 +121,6 @@ CREATE POLICY "Public read nations" ON nations
 
 CREATE POLICY "Public insert contact" ON contact_requests
     FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Public read site_settings" ON site_settings
+    FOR SELECT USING (true);

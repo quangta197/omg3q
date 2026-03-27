@@ -590,6 +590,7 @@ Mobile:
 /blog                       → Hub bài viết SEO
 /blog/[slug]                → Bài viết SEO chi tiết
 /admin                      → Admin Dashboard (Protected)
+/admin/login                → Đăng nhập admin CMS
 /admin/accounts             → Quản lý danh sách nick
 /admin/accounts/new         → Thêm nick mới
 /admin/accounts/[id]/edit   → Sửa nick
@@ -901,8 +902,7 @@ CREATE TABLE site_settings (
 INSERT INTO site_settings (key, value) VALUES
     ('contact_info', '{"zalo": "0123456789", "facebook": "https://fb.com/omg3q", "phone": "0123456789", "email": "lienhe@omg3q.vn"}'::jsonb),
     ('site_meta', '{"title": "OMG 3Q - Mua bán nick uy tín", "description": "Chuyên mua bán nick OMG 3Q giá rẻ, uy tín #1"}'::jsonb),
-    ('pricing_note', '{"text": "Giá đã bao gồm phí chuyển nick"}'::jsonb),
-    ('watermark_config', '{"enabled": true, "text": "0123.456.789", "opacity": 0.15, "font_size": 28, "rotation": -30, "repeat": true, "color": "#FFFFFF", "position": "diagonal_repeat"}'::jsonb);
+    ('pricing_note', '{"text": "Giá đã bao gồm phí chuyển nick"}'::jsonb);
 
 CREATE TABLE banners (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -997,40 +997,16 @@ Buckets:
 └── site-assets/             → Logo, favicon, og-image, v.v.
 ```
 
-### 4.5 Image Processing Pipeline (Watermark Anti-Scam)
+### 4.5 Image Upload Flow
 
-> [!IMPORTANT]
-> **Tất cả ảnh nick game upload lên PHẢI được tự động đóng watermark** bằng số điện thoại admin để chống ăn cắp ảnh scam.
+> Ảnh nick game được upload trực tiếp lên Supabase Storage để admin quản lý gallery nhanh và đơn giản.
 
-#### Watermark Specs
-
-```
-Kiểu:         Diagonal repeat (lặp chéo toàn ảnh)
-Nội dung:     Số điện thoại admin (lấy từ site_settings.watermark_config)
-Opacity:      15% (0.15) — đủ thấy khi zoom, không che nội dung
-Màu chữ:     #FFFFFF (trắng)
-Font size:    28px (tự scale theo kích thước ảnh)
-Rotation:     -30° (chéo từ trái-trên → phải-dưới)
-Khoảng cách:  Repeat mỗi ~200px (tạo lưới chéo toàn ảnh)
-Font:         Inter Bold hoặc system sans-serif
-```
-
-#### Ví dụ trực quan
+#### Upload Rules
 
 ```
-┌──────────────────────────────────────────┐
-│                                          │
-│     0123.456.789         0123.456.789    │← opacity 15%
-│          ╲                    ╲          │   xoay -30°
-│  0123.456.789         0123.456.789       │
-│       ╲                    ╲             │
-│  ẢNH NICK GAME (nội dung chính)         │
-│       ╲                    ╲             │
-│     0123.456.789         0123.456.789    │
-│          ╲                    ╲          │
-│  0123.456.789         0123.456.789       │
-│                                          │
-└──────────────────────────────────────────┘
+- Giữ nguyên ảnh gốc theo định dạng upload hợp lệ
+- Dung lượng tối đa: 10MB / ảnh
+- Lưu theo thư mục account_id để dễ thay ảnh / xóa ảnh / reorder
 ```
 
 #### Processing Flow
@@ -1038,133 +1014,8 @@ Font:         Inter Bold hoặc system sans-serif
 ```mermaid
 graph LR
     A["📤 Admin upload ảnh"] --> B["🔄 Next.js API Route"]
-    B --> C["📐 Resize (max 1920px)"]
-    C --> D["💧 Đóng watermark"]
-    D --> E["🗜️ Convert WebP (quality 85%)"]
-    E --> F["📦 Upload Supabase Storage"]
-    F --> G["🔗 Trả về public URL"]
-```
-
-#### Implementation (Node.js — `sharp` library)
-
-```ts
-// lib/image-processor.ts
-import sharp from 'sharp';
-
-type WatermarkConfig = {
-  opacity?: number;
-  fontSize?: number;
-  rotation?: number;
-  color?: string;
-  maxWidth?: number;
-  quality?: number;
-};
-
-export async function processAccountImage(
-  imageBuffer: Buffer,
-  watermarkText: string,
-  config: WatermarkConfig = {}
-): Promise<Buffer> {
-  const {
-    opacity = 0.15,
-    fontSize = 28,
-    rotation = -30,
-    color = '#FFFFFF',
-    maxWidth = 1920,
-    quality = 85,
-  } = config;
-
-  // 1. Lấy metadata ảnh gốc
-  const metadata = await sharp(imageBuffer).metadata();
-  if (!metadata.width || !metadata.height) {
-    throw new Error('Invalid image metadata');
-  }
-
-  const width = Math.min(metadata.width, maxWidth);
-  const height = Math.round((width / metadata.width) * metadata.height);
-
-  // 2. Tạo SVG watermark overlay (diagonal repeat)
-  const watermarkSvg = generateWatermarkSvg({
-    text: watermarkText,
-    width, height, opacity, fontSize, rotation, color
-  });
-
-  // 3. Composite: ảnh gốc + watermark overlay
-  const result = await sharp(imageBuffer)
-    .resize(width, height, { fit: 'inside', withoutEnlargement: true })
-    .composite([{
-      input: Buffer.from(watermarkSvg),
-      gravity: 'centre',
-    }])
-    .webp({ quality })
-    .toBuffer();
-
-  return result;
-}
-
-function generateWatermarkSvg({
-  text,
-  width,
-  height,
-  opacity,
-  fontSize,
-  rotation,
-  color,
-}: {
-  text: string;
-  width: number;
-  height: number;
-  opacity: number;
-  fontSize: number;
-  rotation: number;
-  color: string;
-}): string {
-  // Tạo pattern text lặp chéo với khoảng cách 200px
-  const spacing = 200;
-  let textElements = '';
-  for (let y = -height; y < height * 2; y += spacing) {
-    for (let x = -width; x < width * 2; x += spacing) {
-      textElements += `<text x="${x}" y="${y}" font-size="${fontSize}" 
-        fill="${color}" opacity="${opacity}" font-family="Inter, sans-serif" 
-        font-weight="700" transform="rotate(${rotation}, ${x}, ${y})">
-        ${text}
-      </text>`;
-    }
-  }
-  return `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-    ${textElements}
-  </svg>`;
-}
-```
-
-#### Watermark Config (Admin có thể chỉnh)
-
-Lưu trong `site_settings` với key `watermark_config`:
-
-```json
-{
-  "enabled": true,
-  "text": "0123.456.789",
-  "opacity": 0.15,
-  "font_size": 28,
-  "rotation": -30,
-  "repeat": true,
-  "color": "#FFFFFF",
-  "position": "diagonal_repeat"
-}
-```
-
-> Admin có thể chỉnh `opacity`, `text` (số điện thoại), `enabled` (bật/tắt) qua Admin Settings page.
-
-#### Dependencies
-
-```json
-// package.json — thêm vào web/
-{
-  "dependencies": {
-    "sharp": "^0.33.x"
-  }
-}
+    B --> C["📦 Upload Supabase Storage"]
+    C --> D["🔗 Trả về public URL"]
 ```
 
 ---
@@ -1208,6 +1059,13 @@ Lưu trong `site_settings` với key `watermark_config`:
 
 ### 5.2 Admin API (Protected — Supabase Auth Required)
 
+#### Admin Auth
+
+| Method   | Endpoint                    | Mô tả                                  |
+| -------- | --------------------------- | -------------------------------------- |
+| `POST`   | `/api/admin/session`        | Đăng nhập admin, tạo phiên `HttpOnly`  |
+| `DELETE` | `/api/admin/session`        | Đăng xuất admin, xóa phiên hiện tại    |
+
 #### Account Management
 
 | Method   | Endpoint                             | Mô tả                    |
@@ -1217,7 +1075,7 @@ Lưu trong `site_settings` với key `watermark_config`:
 | `PUT`    | `/api/admin/accounts/[id]`           | Cập nhật nick             |
 | `DELETE` | `/api/admin/accounts/[id]`           | Xóa nick                  |
 | `PATCH`  | `/api/admin/accounts/[id]/status`    | Đổi trạng thái nick       |
-| `POST`   | `/api/admin/accounts/[id]/images`    | Upload ảnh + auto watermark |
+| `POST`   | `/api/admin/accounts/[id]/images`    | Upload ảnh gallery |
 | `DELETE` | `/api/admin/accounts/[id]/images/[imageId]` | Xóa ảnh             |
 | `PUT`    | `/api/admin/accounts/[id]/images/reorder`   | Sắp xếp ảnh         |
 | `POST`   | `/api/admin/accounts/[id]/heroes`    | Thêm tướng vào nick       |
@@ -1454,6 +1312,8 @@ d:\omg3q\
 │   │   │   ├── 📂 admin/               → Protected Admin Area
 │   │   │   │   ├── layout.tsx          → Admin layout + auth guard
 │   │   │   │   ├── page.tsx            → Dashboard
+│   │   │   │   ├── 📂 login/
+│   │   │   │   │   └── page.tsx        → Đăng nhập admin
 │   │   │   │   ├── 📂 accounts/
 │   │   │   │   │   ├── page.tsx        → Quản lý nick
 │   │   │   │   │   ├── 📂 new/
@@ -1491,6 +1351,8 @@ d:\omg3q\
 │   │   │       │   └── 📂 banners/
 │   │   │       │       └── route.ts
 │   │   │       └── 📂 admin/           → Protected API Routes
+│   │   │           ├── 📂 session/
+│   │   │           │   └── route.ts    → POST login / DELETE logout
 │   │   │           ├── 📂 accounts/
 │   │   │           │   ├── route.ts
 │   │   │           │   └── 📂 [id]/
@@ -1629,6 +1491,11 @@ NEXT_PUBLIC_SITE_NAME=OMG 3Q Shop
 NEXT_PUBLIC_ZALO_LINK=https://zalo.me/0123456789
 NEXT_PUBLIC_FB_PAGE=https://m.me/omg3qshop
 NEXT_PUBLIC_PHONE=0123456789
+
+# Admin Auth
+ADMIN_ALLOWED_EMAILS=admin@omg3q.vn
+ADMIN_SESSION_SECRET=replace-with-random-32-char-secret
+SUPABASE_STORAGE_BUCKET=account-images
 
 # Analytics
 NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX

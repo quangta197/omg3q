@@ -1,0 +1,105 @@
+.root {
+  position: relative;
+  width: 100%;
+}
+
+.control {
+  position: relative;
+}
+
+.input {
+  padding-right: 84px;
+}
+
+.trailing {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transform: translateY(-50%);
+}
+
+.iconButton,
+.chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  color: var(--color-text-mute);
+}
+
+.iconButton {
+  border: 0;
+  background: color-mix(in srgb, var(--color-page-alt) 84%, white 16%);
+  cursor: pointer;
+}
+
+.iconButton svg,
+.chevron svg {
+  width: 16px;
+  height: 16px;
+}
+
+.panel {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  display: grid;
+  gap: 4px;
+  max-height: 280px;
+  padding: 8px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-surface-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.option {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.optionSecondary {
+  color: var(--color-text-soft);
+}
+
+.optionActive,
+.option:hover {
+  background: color-mix(in srgb, var(--color-accent-soft) 22%, white 78%);
+}
+
+.optionSelected {
+  outline: 1px solid color-mix(in srgb, var(--color-accent) 22%, transparent);
+}
+
+.optionLabel {
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.optionDescription {
+  color: var(--color-text-soft);
+  font-size: 0.76rem;
+}
+
+.emptyState {
+  padding: 12px;
+  color: var(--color-text-soft);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}

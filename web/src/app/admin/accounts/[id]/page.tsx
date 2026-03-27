@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { AccountForm } from "@/components/admin/AccountForm";
+import { requireAdminPageSession } from "@/lib/admin-auth";
 import {
   getAdminAccountById,
   getAdminAccountFormOptions,
@@ -27,11 +28,14 @@ function SetupNotice() {
 export default async function EditAdminAccountPage({
   params,
 }: EditAdminAccountPageProps) {
+  const { id } = await params;
+
+  await requireAdminPageSession(`/admin/accounts/${id}`);
+
   if (!hasSupabaseServiceRole()) {
     return <SetupNotice />;
   }
 
-  const { id } = await params;
   const [account, options] = await Promise.all([
     getAdminAccountById(id),
     getAdminAccountFormOptions(),
@@ -46,7 +50,7 @@ export default async function EditAdminAccountPage({
       <div className={styles.panel}>
         <h2 className={styles.heading}>Sửa tài khoản</h2>
         <p className={styles.subheading}>
-          Cập nhật dữ liệu hiển thị public và thay gallery ảnh nếu cần.
+          Cập nhật dữ liệu hiển thị trên site và thay gallery ảnh nếu cần.
         </p>
       </div>
       <div className={styles.panel}>

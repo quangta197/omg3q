@@ -2,6 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import {
+  SearchableSelect,
+  type SearchableSelectOption,
+} from "@/components/ui/SearchableSelect";
 import type { NationOption, ServerOption } from "@/lib/types";
 import styles from "./AccountForm.module.css";
 
@@ -56,12 +60,25 @@ export function AccountForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const serverOptions: SearchableSelectOption[] = servers.map((server) => ({
+    value: server.id,
+    label: server.name,
+    keywords: [server.code, server.name],
+  }));
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const form = event.currentTarget;
     const formData = new FormData(form);
+    const serverId = String(formData.get("server_id") || "").trim();
+
+    if (!serverId) {
+      setError("Bạn cần chọn server từ danh sách gợi ý.");
+      setMessage("");
+      return;
+    }
+
     setIsSubmitting(true);
     setError("");
     setMessage("");
@@ -86,9 +103,7 @@ export function AccountForm({
       }
 
       setMessage(
-        mode === "create"
-          ? "Đã tạo tài khoản mới."
-          : "Đã cập nhật tài khoản."
+        mode === "create" ? "Đã tạo tài khoản mới." : "Đã cập nhật tài khoản."
       );
       router.push(`/admin/accounts/${data.id}`);
       router.refresh();
@@ -145,19 +160,16 @@ export function AccountForm({
 
         <label>
           <span className={styles.label}>Server</span>
-          <select
-            className={styles.select}
+          <SearchableSelect
+            key={initialValues?.serverId ?? "server-empty"}
+            id="server_id"
             name="server_id"
             defaultValue={initialValues?.serverId ?? ""}
-            required
-          >
-            <option value="">Chọn server</option>
-            {servers.map((server) => (
-              <option key={server.id} value={server.id}>
-                {server.name}
-              </option>
-            ))}
-          </select>
+            options={serverOptions}
+            placeholder="Gõ tên hoặc mã server như S930"
+            ariaLabel="Chọn server"
+            inputClassName={styles.select}
+          />
         </label>
 
         <label>
@@ -242,10 +254,10 @@ export function AccountForm({
             name="status"
             defaultValue={initialValues?.status ?? "available"}
           >
-            <option value="available">Available</option>
-            <option value="reserved">Reserved</option>
-            <option value="sold">Sold</option>
-            <option value="hidden">Hidden</option>
+            <option value="available">Đang bán</option>
+            <option value="reserved">Đang giữ</option>
+            <option value="sold">Đã bán</option>
+            <option value="hidden">Ẩn</option>
           </select>
         </label>
 

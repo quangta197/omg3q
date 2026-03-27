@@ -1,6 +1,8 @@
 import { revalidatePath } from "next/cache";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { replaceAccountImages } from "@/lib/admin-accounts";
+import { authorizeAdminApiRequest } from "@/lib/admin-session";
 import { getSupabaseAdminClient, hasSupabaseServiceRole } from "@/lib/supabase-admin";
 
 function normalizeText(formData: FormData, key: string) {
@@ -44,7 +46,13 @@ function validatePayload(formData: FormData) {
   return null;
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const authResult = await authorizeAdminApiRequest(request);
+
+  if (authResult instanceof NextResponse) {
+    return authResult;
+  }
+
   if (!hasSupabaseServiceRole()) {
     return NextResponse.json(
       {

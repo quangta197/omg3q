@@ -1,7 +1,11 @@
 import Link from "next/link";
+import {
+  SearchableSelect,
+  type SearchableSelectOption,
+} from "@/components/ui/SearchableSelect";
 import { AccountGrid } from "@/components/marketing/AccountGrid";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { getFeaturedAccounts } from "@/lib/accounts";
+import { getFeaturedAccounts, getServers } from "@/lib/accounts";
 import { createMetadata } from "@/lib/seo";
 import { buildBreadcrumbSchema, buildItemListSchema } from "@/lib/schema";
 import styles from "./page.module.css";
@@ -40,12 +44,20 @@ const quickFilters = [
   { label: "Dưới 500k", href: "/accounts?price_max=500000" },
   { label: "500k - 2tr", href: "/accounts?price_min=500000&price_max=2000000" },
   { label: "Trên 2tr", href: "/accounts?price_min=2000000" },
-  { label: "Top server", href: "/accounts?sort=power_desc" },
-  { label: "Acc newbie", href: "/accounts?price_max=1000000" },
+  { label: "Lực chiến cao", href: "/accounts?sort=power_desc" },
+  { label: "Nick tân thủ", href: "/accounts?price_max=1000000" },
 ];
 
 export default async function Home() {
-  const featuredAccounts = await getFeaturedAccounts(6);
+  const [featuredAccounts, servers] = await Promise.all([
+    getFeaturedAccounts(6),
+    getServers(),
+  ]);
+  const serverOptions: SearchableSelectOption[] = servers.map((server) => ({
+    value: server.code,
+    label: server.name,
+    keywords: [server.code, server.name],
+  }));
 
   return (
     <>
@@ -81,12 +93,15 @@ export default async function Home() {
                   name="search"
                   placeholder="Nhập từ khóa, server hoặc nhu cầu cụ thể"
                 />
-                <select className={styles.searchSelect} name="server" defaultValue="">
-                  <option value="">Tất cả Server</option>
-                  <option value="s1">Server S1</option>
-                  <option value="s2">Server S2</option>
-                  <option value="s3">Server S3</option>
-                </select>
+                <SearchableSelect
+                  id="home-server"
+                  name="server"
+                  options={serverOptions}
+                  emptyLabel="Tất cả server"
+                  placeholder="Tìm server như S930"
+                  ariaLabel="Chọn server"
+                  inputClassName={styles.searchSelect}
+                />
                 <button className={styles.searchButton} type="submit">
                   Tìm Kiếm
                 </button>

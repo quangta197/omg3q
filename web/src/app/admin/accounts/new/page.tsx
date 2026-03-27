@@ -1,4 +1,5 @@
 import { AccountForm } from "@/components/admin/AccountForm";
+import { requireAdminPageSession } from "@/lib/admin-auth";
 import { getAdminAccountFormOptions } from "@/lib/admin-accounts";
 import { hasSupabaseServiceRole } from "@/lib/supabase-admin";
 import styles from "../editor-page.module.css";
@@ -17,6 +18,8 @@ function SetupNotice() {
 }
 
 export default async function NewAdminAccountPage() {
+  await requireAdminPageSession("/admin/accounts/new");
+
   if (!hasSupabaseServiceRole()) {
     return <SetupNotice />;
   }

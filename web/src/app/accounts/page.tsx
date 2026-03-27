@@ -1,5 +1,9 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import {
+  SearchableSelect,
+  type SearchableSelectOption,
+} from "@/components/ui/SearchableSelect";
 import { AccountGrid } from "@/components/marketing/AccountGrid";
 import { JsonLd } from "@/components/seo/JsonLd";
 import {
@@ -278,6 +282,11 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
     getNations(),
     getAccountsWithFilters(filters),
   ]);
+  const serverSelectOptions: SearchableSelectOption[] = servers.map((server) => ({
+    value: server.code,
+    label: server.name,
+    keywords: [server.code, server.name],
+  }));
 
   const listingPath = buildAccountsPath(result.appliedFilters);
   const serverName =
@@ -397,19 +406,17 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
             <label htmlFor="server" className={styles.label}>
               Server
             </label>
-            <select
+            <SearchableSelect
+              key={result.appliedFilters.server ?? "all-servers"}
               id="server"
               name="server"
-              className={styles.select}
               defaultValue={result.appliedFilters.server ?? ""}
-            >
-              <option value="">Tất cả server</option>
-              {servers.map((server) => (
-                <option key={server.id} value={server.code}>
-                  {server.name}
-                </option>
-              ))}
-            </select>
+              options={serverSelectOptions}
+              emptyLabel="Tất cả server"
+              placeholder="Tìm server như S930"
+              ariaLabel="Lọc theo server"
+              inputClassName={styles.select}
+            />
           </div>
 
           <div>
@@ -547,7 +554,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
           </div>
 
           <div className={styles.policyCard}>
-            <span className={styles.policyTitle}>SEO policy</span>
+            <span className={styles.policyTitle}>Quy tắc SEO</span>
             <p className={styles.policyText}>
               Các URL có filter, sort hoặc phân trang đều tự noindex và canonical
               về listing gốc. Landing page indexable nằm ở nhóm server và quốc gia.

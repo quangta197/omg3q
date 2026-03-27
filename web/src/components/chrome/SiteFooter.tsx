@@ -1,4 +1,10 @@
 import Link from "next/link";
+import {
+  FormIcon,
+  MessengerIcon,
+  PhoneIcon,
+  ZaloIcon,
+} from "./ContactIcons";
 import styles from "./SiteFooter.module.css";
 
 export function SiteFooter() {
@@ -18,10 +24,12 @@ export function SiteFooter() {
           </p>
           <div className={styles.socials}>
             <a href={process.env.NEXT_PUBLIC_FB_PAGE || "#"} aria-label="Messenger">
-              Messenger
+              <MessengerIcon className={styles.socialIcon} />
+              <span>Messenger</span>
             </a>
             <a href={process.env.NEXT_PUBLIC_ZALO_LINK || "#"} aria-label="Zalo">
-              Zalo
+              <ZaloIcon className={styles.socialIcon} />
+              <span>Zalo</span>
             </a>
           </div>
         </div>
@@ -50,15 +58,19 @@ export function SiteFooter() {
           </p>
           <div className={styles.socials}>
             <a href={`tel:${process.env.NEXT_PUBLIC_PHONE || "0123456789"}`}>
-              Hotline
+              <PhoneIcon className={styles.socialIcon} />
+              <span>Hotline</span>
             </a>
-            <Link href="/lien-he">Gửi form</Link>
+            <Link href="/lien-he">
+              <FormIcon className={styles.socialIcon} />
+              <span>Gửi form</span>
+            </Link>
           </div>
         </div>
       </div>
 
       <div className={`container ${styles.bottom}`}>
-        <span>© 2026 OMG3Q Shop. Thiết kế theo hướng marketplace hiện đại.</span>
+        <span>© 2026 OMG3Q Shop</span>
       </div>
     </footer>
   );

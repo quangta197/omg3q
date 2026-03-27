@@ -39,6 +39,7 @@
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .navLink,
@@ -60,6 +61,18 @@
 .navLinkMuted {
   border: 1px solid var(--color-border);
   color: var(--color-text-soft);
+}
+
+.sessionBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-page-alt) 84%, white 16%);
+  color: var(--color-text-soft);
+  font-size: 0.82rem;
+  font-weight: 800;
 }
 
 @media (max-width: 720px) {

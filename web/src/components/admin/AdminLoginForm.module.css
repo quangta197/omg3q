@@ -1,0 +1,48 @@
+.form {
+  display: grid;
+  gap: 14px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.label {
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.input {
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--color-page-alt) 84%, white 16%);
+  color: var(--color-text);
+}
+
+.input:focus {
+  outline: 2px solid color-mix(in srgb, var(--color-accent) 45%, white 55%);
+  outline-offset: 2px;
+}
+
+.error {
+  color: #b42318;
+  font-weight: 700;
+}
+
+.submitButton {
+  min-height: 48px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-strong));
+  color: white;
+  font-weight: 900;
+}
+
+.submitButton:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
