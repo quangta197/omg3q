@@ -1,0 +1,165 @@
+import { revalidatePath } from "next/cache";
+import { NextResponse } from "next/server";
+import { getAdminAccountById, replaceAccountImages } from "@/lib/admin-accounts";
+import { getSupabaseAdminClient, hasSupabaseServiceRole } from "@/lib/supabase-admin";
+
+function normalizeText(formData: FormData, key: string) {
+  return String(formData.get(key) || "").trim();
+}
+
+function normalizeNumber(formData: FormData, key: string, fallback = 0) {
+  const value = Number(formData.get(key) || fallback);
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function parseHighlights(raw: string) {
+  return raw
+    .split(/\r?\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function validatePayload(formData: FormData) {
+  const title = normalizeText(formData, "title");
+  const slug = normalizeText(formData, "slug");
+  const serverId = normalizeText(formData, "server_id");
+  const price = normalizeNumber(formData, "price");
+
+  if (title.length < 4) {
+    return "Tiêu đề phải từ 4 ký tự.";
+  }
+
+  if (slug.length < 4) {
+    return "Slug phải từ 4 ký tự.";
+  }
+
+  if (!serverId) {
+    return "Bạn cần chọn server.";
+  }
+
+  if (price <= 0) {
+    return "Giá bán phải lớn hơn 0.";
+  }
+
+  return null;
+}
+
+type RouteProps = {
+  params: Promise<{ id: string }>;
+};
+
+export async function PATCH(request: Request, { params }: RouteProps) {
+  if (!hasSupabaseServiceRole()) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Thiếu SUPABASE_SERVICE_ROLE_KEY cho admin CMS.",
+      },
+      { status: 503 }
+    );
+  }
+
+  const { id } = await params;
+  const currentAccount = await getAdminAccountById(id);
+
+  if (!currentAccount) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Không tìm thấy tài khoản cần sửa.",
+      },
+      { status: 404 }
+    );
+  }
+
+  const formData = await request.formData();
+  const validationError = validatePayload(formData);
+
+  if (validationError) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: validationError,
+      },
+      { status: 400 }
+    );
+  }
+
+  const supabase = getSupabaseAdminClient();
+  const title = normalizeText(formData, "title");
+  const slug = normalizeText(formData, "slug");
+  const description = normalizeText(formData, "description");
+  const serverId = normalizeText(formData, "server_id");
+  const nationId = normalizeText(formData, "nation_id");
+  const status = normalizeText(formData, "status") || "available";
+  const highlights = parseHighlights(normalizeText(formData, "highlights"));
+  const files = formData
+    .getAll("images")
+    .filter((value): value is File => value instanceof File && value.size > 0);
+
+  const payload = {
+    title,
+    slug,
+    description: description || null,
+    server_id: serverId,
+    nation_id: nationId || null,
+    price: normalizeNumber(formData, "price"),
+    original_price: normalizeText(formData, "original_price")
+      ? normalizeNumber(formData, "original_price")
+      : null,
+    power_score: normalizeNumber(formData, "power_score"),
+    level: normalizeNumber(formData, "level", 1),
+    vip_level: normalizeNumber(formData, "vip_level"),
+    status,
+    is_featured: formData.get("is_featured") === "on",
+    highlights,
+  };
+
+  const { data, error } = await supabase
+    .from("accounts")
+    .update(payload)
+    .eq("id", id)
+    .select("id, slug")
+    .single();
+
+  if (error) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: error.message,
+      },
+      { status: 400 }
+    );
+  }
+
+  try {
+    if (files.length > 0) {
+      await replaceAccountImages(id, files);
+    }
+  } catch (imageError) {
+    return NextResponse.json(
+      {
+        success: false,
+        message:
+          imageError instanceof Error
+            ? imageError.message
+            : "Cập nhật nick thành công nhưng upload ảnh thất bại.",
+      },
+      { status: 500 }
+    );
+  }
+
+  revalidatePath("/");
+  revalidatePath("/accounts");
+  revalidatePath(`/accounts/${currentAccount.slug}`);
+  revalidatePath(`/accounts/${data.slug}`);
+  revalidatePath("/sitemap.xml");
+  revalidatePath("/admin/accounts");
+  revalidatePath(`/admin/accounts/${id}`);
+
+  return NextResponse.json({
+    success: true,
+    id: data.id,
+    slug: data.slug,
+  });
+}

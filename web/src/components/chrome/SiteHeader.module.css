@@ -1,0 +1,121 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: color-mix(in srgb, var(--color-page) 88%, white 12%);
+  border-bottom: 1px solid var(--color-border);
+  backdrop-filter: blur(18px);
+}
+
+.inner {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 20px;
+  min-height: 68px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--color-text);
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.42rem;
+  font-weight: 800;
+}
+
+.logoMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ff005c, #ff335f);
+  color: white;
+  font-size: 0.95rem;
+}
+
+.logoText span {
+  color: var(--color-accent);
+}
+
+.nav {
+  display: inline-flex;
+  justify-content: center;
+  gap: 22px;
+}
+
+.navLink {
+  color: var(--color-text-soft);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: color var(--transition-normal);
+}
+
+.navLink:hover {
+  color: var(--color-text);
+}
+
+.actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.secondaryAction,
+.primaryAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 88px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.secondaryAction {
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-accent);
+}
+
+.primaryAction {
+  background: linear-gradient(135deg, #ff005c, #ff2b66);
+  color: white;
+  box-shadow: 0 16px 36px rgba(255, 0, 92, 0.22);
+}
+
+@media (max-width: 980px) {
+  .inner {
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+    gap: 14px;
+    padding: 16px 0;
+  }
+
+  .brand,
+  .nav,
+  .actions {
+    justify-content: center;
+  }
+
+  .nav {
+    flex-wrap: wrap;
+    gap: 18px;
+  }
+}
+
+@media (max-width: 640px) {
+  .actions {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .secondaryAction,
+  .primaryAction {
+    flex: 1 1 140px;
+  }
+}

@@ -1,0 +1,46 @@
+.page {
+  display: grid;
+  gap: 16px;
+}
+
+.panel,
+.setupCard {
+  padding: 18px 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 22px;
+  background: var(--color-surface-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.heading {
+  color: var(--color-text);
+  font-size: 1.28rem;
+  font-weight: 900;
+}
+
+.subheading {
+  margin-top: 6px;
+  color: var(--color-text-soft);
+  line-height: 1.6;
+}
+
+.setupCard {
+  display: grid;
+  gap: 12px;
+}
+
+.setupCard h2 {
+  color: var(--color-text);
+}
+
+.setupCard p {
+  color: var(--color-text-soft);
+}
+
+.setupCard code {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-page-alt) 80%, white 20%);
+  color: var(--color-text);
+}

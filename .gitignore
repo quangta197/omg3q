@@ -1,0 +1,9 @@
+web/node_modules/
+web/.next/
+web/.vercel/
+web/.turbo/
+web/.git.create-next-app/
+web/.env*
+!web/.env.example
+.DS_Store
+Thumbs.db

@@ -1,0 +1,133 @@
+.stage {
+  padding: 12px;
+  background:
+    radial-gradient(circle at top left, rgba(32, 88, 182, 0.42), transparent 26%),
+    linear-gradient(180deg, #0d1120 0%, #12182a 100%);
+}
+
+.stageMain {
+  position: relative;
+  min-height: 320px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(37, 73, 132, 0.86), rgba(23, 32, 55, 0.94)),
+    linear-gradient(135deg, #18315d, #10192c);
+}
+
+.stageImage {
+  object-fit: cover;
+}
+
+.stageOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 28px 26px;
+  background:
+    linear-gradient(180deg, rgba(10, 16, 32, 0.18), rgba(10, 16, 32, 0.24)),
+    linear-gradient(90deg, rgba(10, 16, 32, 0.34), rgba(10, 16, 32, 0.06));
+  color: white;
+}
+
+.stageContent {
+  max-width: 640px;
+}
+
+.stageTitle {
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(1.8rem, 3vw, 2.3rem);
+  line-height: 1.08;
+}
+
+.stageText {
+  margin-top: 10px;
+  color: rgba(255, 221, 153, 0.92);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.stageHint {
+  align-self: center;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.thumbStrip {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.thumb {
+  position: relative;
+  display: flex;
+  align-items: end;
+  width: 78px;
+  height: 42px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0)),
+    linear-gradient(135deg, #233862, #182340);
+  cursor: pointer;
+}
+
+.thumbImage {
+  object-fit: cover;
+  opacity: 0.42;
+}
+
+.thumbActive {
+  border-color: rgba(255, 0, 92, 0.6);
+  box-shadow: 0 0 0 1px rgba(255, 0, 92, 0.2);
+}
+
+.thumbActive .thumbImage {
+  opacity: 0.64;
+}
+
+.thumbLabel {
+  position: relative;
+  z-index: 1;
+  padding: 0 8px 8px;
+  color: white;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+@media (max-width: 720px) {
+  .stage {
+    padding: 10px;
+  }
+
+  .stageMain {
+    min-height: 240px;
+  }
+
+  .stageOverlay {
+    flex-direction: column;
+    align-items: start;
+    justify-content: end;
+    padding: 18px;
+  }
+
+  .stageHint {
+    display: none;
+  }
+
+  .thumbStrip {
+    gap: 8px;
+  }
+
+  .thumb {
+    width: 68px;
+    height: 40px;
+  }
+}

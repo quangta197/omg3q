@@ -1,0 +1,21 @@
+.stack {
+  width: min(calc(100% - 32px), var(--container-width));
+  margin: 0 auto;
+  padding: 28px 0 0;
+}
+
+.blogList {
+  display: grid;
+  gap: 16px;
+  list-style: none;
+}
+
+.blogLink {
+  display: block;
+  padding: 18px 20px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-strong);
+  color: var(--color-text);
+  box-shadow: var(--shadow-sm);
+}
