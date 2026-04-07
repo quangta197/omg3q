@@ -1,0 +1,65 @@
+.root {
+  display: grid;
+  gap: 8px;
+  min-width: 150px;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  width: fit-content;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.statusAvailable {
+  background: color-mix(in srgb, #d1fadf 82%, white 18%);
+  color: #067647;
+}
+
+.statusReserved {
+  background: color-mix(in srgb, #fef0c7 82%, white 18%);
+  color: #b54708;
+}
+
+.statusSold {
+  background: color-mix(in srgb, #fee4e2 82%, white 18%);
+  color: #b42318;
+}
+
+.statusHidden {
+  background: color-mix(in srgb, var(--color-page-alt) 84%, white 16%);
+  color: var(--color-text-soft);
+}
+
+.select {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-page-alt) 84%, white 16%);
+  color: var(--color-text);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.select:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.feedback {
+  color: var(--color-text-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.feedbackError {
+  color: var(--color-accent);
+}

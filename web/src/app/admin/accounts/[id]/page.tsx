@@ -50,7 +50,7 @@ export default async function EditAdminAccountPage({
       <div className={styles.panel}>
         <h2 className={styles.heading}>Sửa tài khoản</h2>
         <p className={styles.subheading}>
-          Cập nhật dữ liệu hiển thị trên site và thay gallery ảnh nếu cần.
+          Cập nhật dữ liệu hiển thị trên site, quản lý từng ảnh và đổi thumbnail riêng khi cần.
         </p>
       </div>
       <div className={styles.panel}>
@@ -69,6 +69,7 @@ export default async function EditAdminAccountPage({
             price: account.price,
             installmentPrice: account.installmentPrice,
             status: account.status,
+            thumbnailUrl: account.thumbnailUrl,
             highlights: account.highlights,
             isFeatured: account.isFeatured,
             images: account.images,

@@ -1,8 +1,8 @@
 "use client";
 
 import { createClient } from "@supabase/supabase-js";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import {
   SearchableSelect,
   type SearchableSelectOption,
@@ -25,28 +25,41 @@ type PendingUploadTicket = {
   sortOrder: number;
 };
 
+type GalleryImageItem = {
+  clientId: string;
+  existingId?: string;
+  imageUrl: string;
+  caption: string | null;
+  file?: File;
+};
+
+type InitialAccountValues = {
+  slug: string;
+  title: string;
+  description: string;
+  serverId: string;
+  nationId: string | null;
+  powerScore: number;
+  level: number;
+  vipLevel: number;
+  price: number;
+  installmentPrice: number | null;
+  status: "available" | "reserved" | "sold" | "hidden";
+  thumbnailUrl: string | null;
+  highlights: string[];
+  isFeatured: boolean;
+  images: ExistingImage[];
+};
+
 type AccountFormProps = {
   mode: "create" | "edit";
   accountId?: string;
-  initialValues?: {
-    slug: string;
-    title: string;
-    description: string;
-    serverId: string;
-    nationId: string | null;
-    powerScore: number;
-    level: number;
-    vipLevel: number;
-    price: number;
-    installmentPrice: number | null;
-    status: "available" | "reserved" | "sold" | "hidden";
-    highlights: string[];
-    isFeatured: boolean;
-    images: ExistingImage[];
-  };
+  initialValues?: InitialAccountValues;
   servers: ServerOption[];
   nations: NationOption[];
 };
+
+const MAX_GALLERY_IMAGE_COUNT = 20;
 
 function slugify(value: string) {
   return value
@@ -56,6 +69,38 @@ function slugify(value: string) {
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+function createGalleryClientId() {
+  return `gallery-${crypto.randomUUID()}`;
+}
+
+function buildInitialGalleryState(initialValues?: InitialAccountValues) {
+  const items = (initialValues?.images ?? [])
+    .slice()
+    .sort((left, right) => left.sortOrder - right.sortOrder)
+    .map((image) => ({
+      clientId: createGalleryClientId(),
+      existingId: image.id,
+      imageUrl: image.imageUrl,
+      caption: image.caption,
+    }));
+
+  const thumbnailId =
+    items.find((item) => item.imageUrl === initialValues?.thumbnailUrl)?.clientId ??
+    items[0]?.clientId ??
+    null;
+
+  return {
+    items,
+    thumbnailId,
+  };
+}
+
+function isNewGalleryImage(
+  item: GalleryImageItem
+): item is GalleryImageItem & { file: File } {
+  return item.file instanceof File;
 }
 
 function getBrowserSupabaseClient() {
@@ -74,6 +119,53 @@ function getBrowserSupabaseClient() {
   });
 }
 
+function IconArrowUp() {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        d="M10 4.25 4.25 10h3.5v5.75h4.5V10h3.5L10 4.25Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function IconArrowDown() {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        d="M7.75 4.25H12.25V10H15.75L10 15.75 4.25 10h3.5V4.25Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function IconTrash() {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        d="M7.5 2.75h5l.75 1.5H16A.75.75 0 1 1 16 5.75h-.65l-.6 9.15A2 2 0 0 1 12.75 16.75h-5.5a2 2 0 0 1-1.99-1.85l-.61-9.15H4A.75.75 0 0 1 4 4.25h2.75l.75-1.5Zm-1.34 3L6.75 14a.5.5 0 0 0 .5.47h5.5a.5.5 0 0 0 .5-.47l.59-8.25H6.16ZM8 7.75a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0V8.5A.75.75 0 0 1 8 7.75Zm4 .75a.75.75 0 0 0-1.5 0v3.5a.75.75 0 0 0 1.5 0V8.5Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function IconStar({ filled }: { filled: boolean }) {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        d="m10 2.7 2.15 4.35 4.8.7-3.47 3.39.82 4.78L10 13.62 5.7 15.92l.82-4.78L3.05 7.75l4.8-.7L10 2.7Z"
+        fill={filled ? "currentColor" : "none"}
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function AccountForm({
   mode,
   accountId,
@@ -82,9 +174,35 @@ export function AccountForm({
   nations,
 }: AccountFormProps) {
   const router = useRouter();
+  const initialGallery = useMemo(
+    () => buildInitialGalleryState(initialValues),
+    [initialValues]
+  );
+  const previewUrlsRef = useRef<Set<string>>(new Set());
+  const [galleryItems, setGalleryItems] = useState<GalleryImageItem[]>(initialGallery.items);
+  const [thumbnailImageId, setThumbnailImageId] = useState<string | null>(
+    initialGallery.thumbnailId
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    setGalleryItems(initialGallery.items);
+    setThumbnailImageId(initialGallery.thumbnailId);
+  }, [initialGallery]);
+
+  useEffect(() => {
+    const previewUrls = previewUrlsRef.current;
+
+    return () => {
+      for (const previewUrl of previewUrls) {
+        URL.revokeObjectURL(previewUrl);
+      }
+
+      previewUrls.clear();
+    };
+  }, []);
 
   const serverOptions: SearchableSelectOption[] = servers.map((server) => ({
     value: server.id,
@@ -92,17 +210,35 @@ export function AccountForm({
     keywords: [server.code, server.name],
   }));
 
-  async function uploadImagesDirectly(files: File[]) {
+  const activeThumbnailImageId =
+    thumbnailImageId && galleryItems.some((item) => item.clientId === thumbnailImageId)
+      ? thumbnailImageId
+      : galleryItems[0]?.clientId ?? null;
+
+  function revokePreviewUrl(image: GalleryImageItem | undefined) {
+    if (!image || !image.file || !previewUrlsRef.current.has(image.imageUrl)) {
+      return;
+    }
+
+    URL.revokeObjectURL(image.imageUrl);
+    previewUrlsRef.current.delete(image.imageUrl);
+  }
+
+  async function uploadImagesDirectly(items: Array<GalleryImageItem & { file: File }>) {
+    if (items.length === 0) {
+      return new Map<string, PendingUploadTicket>();
+    }
+
     const response = await fetch("/api/admin/uploads", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        files: files.map((file) => ({
-          name: file.name,
-          type: file.type,
-          size: file.size,
+        files: items.map((item) => ({
+          name: item.file.name,
+          type: item.file.type,
+          size: item.file.size,
         })),
       }),
     });
@@ -118,32 +254,121 @@ export function AccountForm({
       throw new Error(data.message || "Không tạo được phiên upload ảnh.");
     }
 
-    if (data.uploads.length !== files.length) {
+    if (data.uploads.length !== items.length) {
       throw new Error("Số lượng ảnh upload không khớp với dữ liệu đã chọn.");
     }
 
     const supabase = getBrowserSupabaseClient();
-    const uploadedImages: PendingUploadTicket[] = [];
+    const uploadedImages = new Map<string, PendingUploadTicket>();
 
-    for (const [index, file] of files.entries()) {
-      setMessage(`Đang upload ảnh ${index + 1}/${files.length}...`);
+    for (const [index, item] of items.entries()) {
+      setMessage(`Đang upload ảnh ${index + 1}/${items.length}...`);
 
       const target = data.uploads[index];
       const { error: uploadError } = await supabase.storage
         .from(data.bucket)
-        .uploadToSignedUrl(target.path, target.token, file, {
+        .uploadToSignedUrl(target.path, target.token, item.file, {
           upsert: false,
-          contentType: file.type || undefined,
+          contentType: item.file.type || undefined,
         });
 
       if (uploadError) {
         throw new Error(uploadError.message);
       }
 
-      uploadedImages.push(target);
+      uploadedImages.set(item.clientId, target);
     }
 
     return uploadedImages;
+  }
+
+  function handleImageSelection(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.currentTarget.files ?? []).filter((file) => file.size > 0);
+    event.currentTarget.value = "";
+
+    if (files.length === 0) {
+      return;
+    }
+
+    setMessage("");
+    setError("");
+
+    setGalleryItems((currentItems) => {
+      if (currentItems.length + files.length > MAX_GALLERY_IMAGE_COUNT) {
+        setError(`Tối đa ${MAX_GALLERY_IMAGE_COUNT} ảnh cho mỗi nick.`);
+        return currentItems;
+      }
+
+      const appendedItems = files.map((file) => {
+        const previewUrl = URL.createObjectURL(file);
+        previewUrlsRef.current.add(previewUrl);
+
+        return {
+          clientId: createGalleryClientId(),
+          imageUrl: previewUrl,
+          caption: null,
+          file,
+        } satisfies GalleryImageItem;
+      });
+
+      const nextItems = [...currentItems, ...appendedItems];
+
+      setThumbnailImageId((currentThumbnailId) => {
+        if (currentThumbnailId && nextItems.some((item) => item.clientId === currentThumbnailId)) {
+          return currentThumbnailId;
+        }
+
+        return nextItems[0]?.clientId ?? null;
+      });
+
+      return nextItems;
+    });
+  }
+
+  function handleRemoveImage(clientId: string) {
+    setMessage("");
+    setError("");
+
+    setGalleryItems((currentItems) => {
+      const removedImage = currentItems.find((item) => item.clientId === clientId);
+      const nextItems = currentItems.filter((item) => item.clientId !== clientId);
+      revokePreviewUrl(removedImage);
+
+      setThumbnailImageId((currentThumbnailId) => {
+        if (
+          currentThumbnailId &&
+          currentThumbnailId !== clientId &&
+          nextItems.some((item) => item.clientId === currentThumbnailId)
+        ) {
+          return currentThumbnailId;
+        }
+
+        return nextItems[0]?.clientId ?? null;
+      });
+
+      return nextItems;
+    });
+  }
+
+  function handleMoveImage(clientId: string, direction: -1 | 1) {
+    setGalleryItems((currentItems) => {
+      const currentIndex = currentItems.findIndex((item) => item.clientId === clientId);
+      const nextIndex = currentIndex + direction;
+
+      if (
+        currentIndex === -1 ||
+        nextIndex < 0 ||
+        nextIndex >= currentItems.length
+      ) {
+        return currentItems;
+      }
+
+      const nextItems = currentItems.slice();
+      const [movedImage] = nextItems.splice(currentIndex, 1);
+      nextItems.splice(nextIndex, 0, movedImage);
+
+      return nextItems;
+    });
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -164,15 +389,36 @@ export function AccountForm({
     setMessage("");
 
     try {
-      const selectedFiles = formData
-        .getAll("images")
-        .filter((value): value is File => value instanceof File && value.size > 0);
+      const newGalleryItems = galleryItems.filter(isNewGalleryImage);
+      const uploadedImages = await uploadImagesDirectly(newGalleryItems);
 
-      if (selectedFiles.length > 0) {
-        const uploadedImages = await uploadImagesDirectly(selectedFiles);
-        formData.delete("images");
-        formData.set("uploaded_images", JSON.stringify(uploadedImages));
-      }
+      const galleryState = galleryItems.map((item, index) => {
+        if (item.existingId) {
+          return {
+            id: item.existingId,
+            caption: item.caption,
+            sortOrder: index,
+            isThumbnail: item.clientId === activeThumbnailImageId,
+          };
+        }
+
+        const uploadedImage = uploadedImages.get(item.clientId);
+
+        if (!uploadedImage) {
+          throw new Error("Có ảnh mới chưa upload xong. Hãy thử lại.");
+        }
+
+        return {
+          path: uploadedImage.path,
+          caption: item.caption,
+          sortOrder: index,
+          isThumbnail: item.clientId === activeThumbnailImageId,
+        };
+      });
+
+      formData.delete("images");
+      formData.delete("uploaded_images");
+      formData.set("gallery_state", JSON.stringify(galleryState));
 
       const response = await fetch(
         mode === "create" ? "/api/admin/accounts" : `/api/admin/accounts/${accountId}`,
@@ -381,24 +627,98 @@ export function AccountForm({
           type="file"
           accept="image/*"
           multiple
+          onChange={handleImageSelection}
+          disabled={isSubmitting}
         />
         <span className={styles.helper}>
-          Nếu upload ảnh mới ở chế độ sửa, gallery cũ sẽ được thay bằng bộ ảnh mới.
-          Mỗi ảnh nên dưới 10MB để upload ổn định trên điện thoại.
+          Thêm ảnh mới sẽ nối vào gallery hiện tại. Bạn có thể xóa từng ảnh, đổi thứ tự,
+          chọn ảnh đại diện riêng và giữ toàn bộ ảnh cũ nếu không muốn thay thế.
+        </span>
+        <span className={styles.helper}>
+          Đang có {galleryItems.length}/{MAX_GALLERY_IMAGE_COUNT} ảnh. Mỗi ảnh nên dưới 10MB
+          để upload ổn định trên điện thoại.
         </span>
       </label>
 
-      {initialValues?.images.length ? (
+      {galleryItems.length > 0 ? (
         <div className={styles.previewGrid}>
-          {initialValues.images.map((image) => (
-            <div key={image.id} className={styles.previewCard}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={image.imageUrl} alt="" className={styles.previewImage} />
-              <span>Ảnh #{image.sortOrder + 1}</span>
-            </div>
-          ))}
+          {galleryItems.map((image, index) => {
+            const isThumbnail = image.clientId === activeThumbnailImageId;
+
+            return (
+              <article
+                key={image.clientId}
+                className={`${styles.previewCard} ${
+                  isThumbnail ? styles.previewCardActive : ""
+                }`}
+              >
+                <div className={styles.previewMedia}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={image.imageUrl} alt="" className={styles.previewImage} />
+                  <div className={styles.previewBadges}>
+                    <span className={styles.orderBadge}>Ảnh #{index + 1}</span>
+                    {image.file ? <span className={styles.newBadge}>Mới</span> : null}
+                  </div>
+                  {isThumbnail ? (
+                    <span className={styles.thumbnailBadge}>Ảnh đại diện</span>
+                  ) : null}
+                </div>
+
+                <div className={styles.previewFooter}>
+                  <div className={styles.iconActions}>
+                    <button
+                      className={styles.iconButton}
+                      type="button"
+                      onClick={() => handleMoveImage(image.clientId, -1)}
+                      disabled={isSubmitting || index === 0}
+                      aria-label={`Đưa ảnh #${index + 1} lên trước`}
+                      title="Đưa lên trước"
+                    >
+                      <IconArrowUp />
+                    </button>
+                    <button
+                      className={styles.iconButton}
+                      type="button"
+                      onClick={() => handleMoveImage(image.clientId, 1)}
+                      disabled={isSubmitting || index === galleryItems.length - 1}
+                      aria-label={`Đưa ảnh #${index + 1} xuống sau`}
+                      title="Đưa xuống sau"
+                    >
+                      <IconArrowDown />
+                    </button>
+                    <button
+                      className={`${styles.iconButton} ${styles.deleteButton}`}
+                      type="button"
+                      onClick={() => handleRemoveImage(image.clientId)}
+                      disabled={isSubmitting}
+                      aria-label={`Xóa ảnh #${index + 1}`}
+                      title="Xóa ảnh"
+                    >
+                      <IconTrash />
+                    </button>
+                  </div>
+
+                  <button
+                    className={`${styles.thumbnailButton} ${
+                      isThumbnail ? styles.thumbnailButtonActive : ""
+                    }`}
+                    type="button"
+                    onClick={() => setThumbnailImageId(image.clientId)}
+                    disabled={isSubmitting || isThumbnail}
+                  >
+                    <IconStar filled={isThumbnail} />
+                    <span>{isThumbnail ? "Đang là thumbnail" : "Chọn làm thumbnail"}</span>
+                  </button>
+                </div>
+              </article>
+            );
+          })}
         </div>
-      ) : null}
+      ) : (
+        <div className={styles.emptyGallery}>
+          Chưa có ảnh nào. Hãy thêm vài ảnh để khách xem được gallery và ảnh đại diện.
+        </div>
+      )}
 
       {error ? <p className={styles.error}>{error}</p> : null}
       {message ? <p className={styles.success}>{message}</p> : null}

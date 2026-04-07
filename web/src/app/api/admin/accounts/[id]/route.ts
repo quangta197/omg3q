@@ -2,10 +2,12 @@ import { revalidatePath } from "next/cache";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import {
+  type AdminAccountGalleryItemInput,
   type PendingAdminImageUpload,
   getAdminAccountById,
   replaceAccountImages,
   replaceAccountImagesWithPendingUploads,
+  syncAccountGallery,
 } from "@/lib/admin-accounts";
 import { authorizeAdminApiRequest } from "@/lib/admin-session";
 import { getSupabaseAdminClient, hasSupabaseServiceRole } from "@/lib/supabase-admin";
@@ -80,6 +82,72 @@ function parsePendingUploads(formData: FormData) {
     .sort((left, right) => left.sortOrder - right.sortOrder);
 }
 
+function parseGalleryState(formData: FormData) {
+  if (!formData.has("gallery_state")) {
+    return parsePendingUploads(formData).map((item, index) => ({
+      path: item.path,
+      caption: null,
+      sortOrder: item.sortOrder,
+      isThumbnail: index === 0,
+    })) as AdminAccountGalleryItemInput[];
+  }
+
+  const raw = normalizeText(formData, "gallery_state");
+
+  if (!raw) {
+    return [] as AdminAccountGalleryItemInput[];
+  }
+
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error("Gallery ảnh không hợp lệ.");
+  }
+
+  if (!Array.isArray(parsed)) {
+    throw new Error("Gallery ảnh không hợp lệ.");
+  }
+
+  const items = parsed.map((item) => {
+    const row = item as Partial<AdminAccountGalleryItemInput>;
+    const id = String(row.id || "").trim();
+    const path = String(row.path || "").trim();
+    const sortOrder = Number(row.sortOrder ?? 0);
+
+    if (id && path) {
+      throw new Error("Mỗi ảnh chỉ được là ảnh cũ hoặc ảnh mới.");
+    }
+
+    if (!id && !path) {
+      throw new Error("Gallery ảnh có phần tử không hợp lệ.");
+    }
+
+    if (path && !path.startsWith("accounts/")) {
+      throw new Error("Đường dẫn ảnh upload không hợp lệ.");
+    }
+
+    if (!Number.isFinite(sortOrder)) {
+      throw new Error("Thứ tự ảnh không hợp lệ.");
+    }
+
+    return {
+      ...(id ? { id } : {}),
+      ...(path ? { path } : {}),
+      caption: typeof row.caption === "string" ? row.caption : null,
+      sortOrder,
+      isThumbnail: Boolean(row.isThumbnail),
+    } satisfies AdminAccountGalleryItemInput;
+  });
+
+  if (items.filter((item) => item.isThumbnail).length > 1) {
+    throw new Error("Chỉ được chọn một ảnh đại diện.");
+  }
+
+  return items.sort((left, right) => left.sortOrder - right.sortOrder);
+}
+
 function validatePayload(formData: FormData) {
   const title = normalizeText(formData, "title");
   const slug = normalizeText(formData, "slug");
@@ -146,10 +214,13 @@ export async function PATCH(request: NextRequest, { params }: RouteProps) {
   }
 
   const formData = await request.formData();
+  const hasStructuredGallery = formData.has("gallery_state");
+  let galleryState: AdminAccountGalleryItemInput[] = [];
   let uploadedImages: PendingAdminImageUpload[] = [];
 
   try {
-    uploadedImages = parsePendingUploads(formData);
+    galleryState = parseGalleryState(formData);
+    uploadedImages = hasStructuredGallery ? [] : parsePendingUploads(formData);
   } catch (error) {
     return NextResponse.json(
       {
@@ -199,6 +270,7 @@ export async function PATCH(request: NextRequest, { params }: RouteProps) {
     status,
     is_featured: formData.get("is_featured") === "on",
     highlights,
+    updated_at: new Date().toISOString(),
     ...(installmentPrice !== null
       ? { installment_price: installmentPrice }
       : {}),
@@ -236,7 +308,9 @@ export async function PATCH(request: NextRequest, { params }: RouteProps) {
   }
 
   try {
-    if (uploadedImages.length > 0) {
+    if (hasStructuredGallery || galleryState.length > 0) {
+      await syncAccountGallery(id, galleryState);
+    } else if (uploadedImages.length > 0) {
       await replaceAccountImagesWithPendingUploads(id, uploadedImages);
     } else if (files.length > 0) {
       await replaceAccountImages(id, files);

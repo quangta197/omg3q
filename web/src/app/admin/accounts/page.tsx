@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdminStatusQuickUpdate } from "@/components/admin/AdminStatusQuickUpdate";
 import {
   SearchableSelect,
   type SearchableSelectOption,
@@ -221,38 +222,6 @@ function getPageItems(currentPage: number, totalPages: number) {
     .sort((left, right) => left - right);
 }
 
-function getStatusLabel(status: AdminAccountStatus) {
-  if (status === "available") {
-    return "Đang bán";
-  }
-
-  if (status === "reserved") {
-    return "Đang giữ";
-  }
-
-  if (status === "sold") {
-    return "Đã bán";
-  }
-
-  return "Ẩn";
-}
-
-function getStatusClassName(status: AdminAccountStatus) {
-  if (status === "available") {
-    return styles.statusAvailable;
-  }
-
-  if (status === "reserved") {
-    return styles.statusReserved;
-  }
-
-  if (status === "sold") {
-    return styles.statusSold;
-  }
-
-  return styles.statusHidden;
-}
-
 function formatUpdatedDate(value: string | null) {
   if (!value) {
     return "Chưa cập nhật";
@@ -463,8 +432,8 @@ export default async function AdminAccountsPage({
           <div>
             <h3 className={styles.sectionTitle}>Kho dữ liệu nick</h3>
             <p className={styles.sectionText}>
-              Tập trung vào thao tác tìm nhanh, nhận diện trạng thái và nhảy thẳng vào
-              màn sửa.
+              Tập trung vào thao tác tìm nhanh, đổi trạng thái ngay trong bảng và chỉ
+              vào màn sửa khi thật sự cần chỉnh sâu.
             </p>
           </div>
           <div className={styles.tableContext}>
@@ -513,11 +482,10 @@ export default async function AdminAccountsPage({
                       </div>
                     </td>
                     <td>
-                      <span
-                        className={`${styles.statusBadge} ${getStatusClassName(account.status)}`}
-                      >
-                        {getStatusLabel(account.status)}
-                      </span>
+                      <AdminStatusQuickUpdate
+                        accountId={account.id}
+                        initialStatus={account.status}
+                      />
                     </td>
                     <td>
                       <span

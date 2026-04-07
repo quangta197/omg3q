@@ -1009,6 +1009,8 @@ Buckets:
 - Giữ nguyên ảnh gốc theo định dạng upload hợp lệ
 - Dung lượng tối đa: 10MB / ảnh
 - Lưu theo thư mục account_id để dễ thay ảnh / xóa ảnh / reorder
+- Admin CMS phải hỗ trợ xóa từng ảnh, thêm ảnh mới mà không mất ảnh cũ, đổi thứ tự ảnh và chọn thumbnail riêng cho từng nick
+- Luồng upload dùng signed upload URL lên Supabase Storage, sau đó đồng bộ `account_images` và `accounts.thumbnail_url` theo gallery state cuối cùng
 ```
 
 #### Processing Flow

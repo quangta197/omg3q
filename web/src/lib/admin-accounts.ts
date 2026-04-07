@@ -102,6 +102,14 @@ export type PendingAdminImageUpload = {
   sortOrder: number;
 };
 
+export type AdminAccountGalleryItemInput = {
+  id?: string;
+  path?: string;
+  caption?: string | null;
+  sortOrder: number;
+  isThumbnail?: boolean;
+};
+
 function toNumber(value: number | string | null | undefined) {
   if (typeof value === "number") {
     return value;
@@ -374,15 +382,51 @@ type StoredAccountImage = {
   sortOrder: number;
 };
 
-async function replaceStoredAccountImages(
+function normalizeGalleryCaption(value?: string | null) {
+  const normalized = value?.trim();
+  return normalized ? normalized : null;
+}
+
+function normalizeGalleryItems(
+  images: AdminAccountGalleryItemInput[]
+): Array<{
+  id?: string;
+  path?: string;
+  caption: string | null;
+  sortOrder: number;
+  isThumbnail: boolean;
+}> {
+  return images
+    .map((image) => ({
+      id: image.id?.trim() || undefined,
+      path: image.path?.trim() || undefined,
+      caption: normalizeGalleryCaption(image.caption),
+      sortOrder: Number(image.sortOrder ?? 0),
+      isThumbnail: Boolean(image.isThumbnail),
+    }))
+    .filter((image) => image.id || image.path)
+    .sort((left, right) => left.sortOrder - right.sortOrder)
+    .map((image, index) => ({
+      ...image,
+      sortOrder: index,
+    }));
+}
+
+async function syncStoredAccountImages(
   accountId: string,
-  uploadedImages: StoredAccountImage[]
+  images: AdminAccountGalleryItemInput[]
 ) {
+  const normalizedImages = normalizeGalleryItems(images);
+
+  if (normalizedImages.length > MAX_ADMIN_IMAGE_COUNT) {
+    throw new Error(`Chỉ được lưu tối đa ${MAX_ADMIN_IMAGE_COUNT} ảnh cho mỗi nick.`);
+  }
+
   const supabase = getSupabaseAdminClient();
   const bucket = getStorageBucketName();
   const { data: existingImages, error: existingError } = await supabase
     .from("account_images")
-    .select("id, image_url")
+    .select("id, image_url, caption, sort_order")
     .eq("account_id", accountId)
     .order("sort_order", { ascending: true });
 
@@ -390,36 +434,100 @@ async function replaceStoredAccountImages(
     throw new Error(existingError.message);
   }
 
-  const { error: deleteRowsError } = await supabase
-    .from("account_images")
-    .delete()
-    .eq("account_id", accountId);
+  const existingImageRows = (existingImages ?? []) as AccountImageRow[];
+  const existingImageMap = new Map(existingImageRows.map((image) => [image.id, image]));
+  const keptExistingIds = new Set<string>();
+  const imagesToInsert: Array<{
+    account_id: string;
+    image_url: string;
+    caption: string | null;
+    sort_order: number;
+  }> = [];
+  const finalImages: Array<StoredAccountImage & { isThumbnail: boolean }> = [];
 
-  if (deleteRowsError) {
-    throw new Error(deleteRowsError.message);
-  }
+  for (const image of normalizedImages) {
+    if (image.id) {
+      const existingImage = existingImageMap.get(image.id);
 
-  if (uploadedImages.length > 0) {
-    const { error: insertImagesError } = await supabase
-      .from("account_images")
-      .insert(
-        uploadedImages.map((image) => ({
-          account_id: accountId,
-          image_url: image.imageUrl,
+      if (!existingImage) {
+        throw new Error("Danh sách ảnh đã cũ hoặc không hợp lệ. Hãy tải lại trang rồi thử lại.");
+      }
+
+      keptExistingIds.add(image.id);
+
+      finalImages.push({
+        imageUrl: existingImage.image_url,
+        caption: image.caption,
+        sortOrder: image.sortOrder,
+        isThumbnail: image.isThumbnail,
+      });
+
+      const { error: updateImageError } = await supabase
+        .from("account_images")
+        .update({
           caption: image.caption,
           sort_order: image.sortOrder,
-        }))
-      );
+        })
+        .eq("id", image.id);
+
+      if (updateImageError) {
+        throw new Error(updateImageError.message);
+      }
+
+      continue;
+    }
+
+    if (!image.path) {
+      continue;
+    }
+
+    const publicUrl = supabase.storage.from(bucket).getPublicUrl(image.path).data.publicUrl;
+
+    imagesToInsert.push({
+      account_id: accountId,
+      image_url: publicUrl,
+      caption: image.caption,
+      sort_order: image.sortOrder,
+    });
+
+    finalImages.push({
+      imageUrl: publicUrl,
+      caption: image.caption,
+      sortOrder: image.sortOrder,
+      isThumbnail: image.isThumbnail,
+    });
+  }
+
+  const removedImages = existingImageRows.filter((image) => !keptExistingIds.has(image.id));
+
+  if (removedImages.length > 0) {
+    const { error: deleteRowsError } = await supabase
+      .from("account_images")
+      .delete()
+      .in("id", removedImages.map((image) => image.id));
+
+    if (deleteRowsError) {
+      throw new Error(deleteRowsError.message);
+    }
+  }
+
+  if (imagesToInsert.length > 0) {
+    const { error: insertImagesError } = await supabase
+      .from("account_images")
+      .insert(imagesToInsert);
 
     if (insertImagesError) {
       throw new Error(insertImagesError.message);
     }
   }
 
+  const thumbnailImage =
+    finalImages.find((image) => image.isThumbnail) ?? finalImages[0] ?? null;
+
   const { error: updateThumbnailError } = await supabase
     .from("accounts")
     .update({
-      thumbnail_url: uploadedImages[0]?.imageUrl ?? null,
+      thumbnail_url: thumbnailImage?.imageUrl ?? null,
     })
     .eq("id", accountId);
 
@@ -427,7 +535,7 @@ async function replaceStoredAccountImages(
     throw new Error(updateThumbnailError.message);
   }
 
-  const oldPaths = (existingImages ?? [])
+  const oldPaths = removedImages
     .map((image) => extractStoragePath(image.image_url as string, bucket))
     .filter((path): path is string => Boolean(path));
 
@@ -435,7 +543,11 @@ async function replaceStoredAccountImages(
     await supabase.storage.from(bucket).remove(oldPaths);
   }
 
-  return uploadedImages;
+  return finalImages.map((image) => ({
+    imageUrl: image.imageUrl,
+    caption: image.caption,
+    sortOrder: image.sortOrder,
+  }));
 }
 
 export async function getAdminAccountFormOptions(): Promise<AdminAccountFormOptions> {
@@ -673,22 +785,35 @@ export async function getAdminAccountById(
 
 export async function replaceAccountImages(accountId: string, files: File[]) {
   const uploadedImages = await uploadImages(accountId, files);
-  return replaceStoredAccountImages(accountId, uploadedImages);
+  return syncStoredAccountImages(
+    accountId,
+    uploadedImages.map((image, index) => ({
+      path: extractStoragePath(image.imageUrl, getStorageBucketName()) || undefined,
+      caption: image.caption,
+      sortOrder: image.sortOrder,
+      isThumbnail: index === 0,
+    }))
+  );
+}
+
+export async function syncAccountGallery(
+  accountId: string,
+  images: AdminAccountGalleryItemInput[]
+) {
+  return syncStoredAccountImages(accountId, images);
 }
 
 export async function replaceAccountImagesWithPendingUploads(
   accountId: string,
   uploads: PendingAdminImageUpload[]
 ) {
-  const bucket = getStorageBucketName();
-  const supabase = getSupabaseAdminClient();
-
-  return replaceStoredAccountImages(
+  return syncStoredAccountImages(
     accountId,
-    uploads.map((upload) => ({
-      imageUrl: supabase.storage.from(bucket).getPublicUrl(upload.path).data.publicUrl,
+    uploads.map((upload, index) => ({
+      path: upload.path,
       caption: null,
       sortOrder: upload.sortOrder,
+      isThumbnail: index === 0,
     }))
   );
 }
