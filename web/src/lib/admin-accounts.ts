@@ -93,7 +93,14 @@ export type AdminAccountEditorRecord = {
 export type AdminAccountFormOptions = {
   servers: ServerOption[];
   nations: NationOption[];
-  };
+};
+
+export type PendingAdminImageUpload = {
+  path: string;
+  token: string;
+  publicUrl: string;
+  sortOrder: number;
+};
 
 function toNumber(value: number | string | null | undefined) {
   if (typeof value === "number") {
@@ -193,7 +200,7 @@ function getStorageBucketName() {
   return process.env.SUPABASE_STORAGE_BUCKET || "account-images";
 }
 
-async function ensureStorageBucketExists() {
+export async function ensureStorageBucketExists() {
   const supabase = getSupabaseAdminClient();
   const bucket = getStorageBucketName();
   const { data: buckets, error: listError } = await supabase.storage.listBuckets();
@@ -218,6 +225,94 @@ async function ensureStorageBucketExists() {
   }
 
   return bucket;
+}
+
+const MAX_ADMIN_IMAGE_SIZE = 10 * 1024 * 1024;
+const MAX_ADMIN_IMAGE_COUNT = 20;
+
+function sanitizeFileExtension(fileName: string, contentType?: string) {
+  const extensionFromName = fileName.split(".").pop()?.toLowerCase() ?? "";
+  const normalizedNameExtension = extensionFromName.replace(/[^a-z0-9]/g, "");
+
+  if (normalizedNameExtension) {
+    return normalizedNameExtension.slice(0, 10);
+  }
+
+  if (contentType?.startsWith("image/")) {
+    const normalizedTypeExtension = contentType
+      .slice("image/".length)
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+
+    if (normalizedTypeExtension) {
+      return normalizedTypeExtension.slice(0, 10);
+    }
+  }
+
+  return "jpg";
+}
+
+export async function createPendingAdminImageUploads(
+  files: Array<{ name: string; type?: string; size: number }>
+): Promise<{
+  bucket: string;
+  uploads: PendingAdminImageUpload[];
+}> {
+  if (files.length === 0) {
+    return {
+      bucket: await ensureStorageBucketExists(),
+      uploads: [],
+    };
+  }
+
+  if (files.length > MAX_ADMIN_IMAGE_COUNT) {
+    throw new Error(`Chỉ được upload tối đa ${MAX_ADMIN_IMAGE_COUNT} ảnh mỗi lần.`);
+  }
+
+  const bucket = await ensureStorageBucketExists();
+  const supabase = getSupabaseAdminClient();
+  const batchId = `${Date.now()}-${crypto.randomUUID()}`;
+  const uploads: PendingAdminImageUpload[] = [];
+
+  for (const [index, file] of files.entries()) {
+    if (file.size <= 0) {
+      throw new Error(`Ảnh #${index + 1} không hợp lệ.`);
+    }
+
+    if (file.size > MAX_ADMIN_IMAGE_SIZE) {
+      throw new Error(
+        `Ảnh "${file.name || `#${index + 1}`}" vượt quá 10MB. Hãy nén nhỏ hơn rồi thử lại.`
+      );
+    }
+
+    if (file.type && !file.type.startsWith("image/")) {
+      throw new Error(`Tệp "${file.name || `#${index + 1}`}" không phải ảnh hợp lệ.`);
+    }
+
+    const extension = sanitizeFileExtension(file.name, file.type);
+    const path = `accounts/uploads/${batchId}/${index + 1}.${extension}`;
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .createSignedUploadUrl(path);
+
+    if (error || !data?.token) {
+      throw new Error(error?.message || "Không tạo được liên kết upload ảnh.");
+    }
+
+    const { data: publicUrlData } = supabase.storage.from(bucket).getPublicUrl(path);
+
+    uploads.push({
+      path,
+      token: data.token,
+      publicUrl: publicUrlData.publicUrl,
+      sortOrder: index,
+    });
+  }
+
+  return {
+    bucket,
+    uploads,
+  };
 }
 
 function extractStoragePath(url: string, bucket: string) {
@@ -268,6 +363,76 @@ async function uploadImages(accountId: string, files: File[]) {
       caption: null,
       sortOrder: index,
     });
+  }
+
+  return uploadedImages;
+}
+
+type StoredAccountImage = {
+  imageUrl: string;
+  caption: string | null;
+  sortOrder: number;
+};
+
+async function replaceStoredAccountImages(
+  accountId: string,
+  uploadedImages: StoredAccountImage[]
+) {
+  const supabase = getSupabaseAdminClient();
+  const bucket = getStorageBucketName();
+  const { data: existingImages, error: existingError } = await supabase
+    .from("account_images")
+    .select("id, image_url")
+    .eq("account_id", accountId)
+    .order("sort_order", { ascending: true });
+
+  if (existingError) {
+    throw new Error(existingError.message);
+  }
+
+  const { error: deleteRowsError } = await supabase
+    .from("account_images")
+    .delete()
+    .eq("account_id", accountId);
+
+  if (deleteRowsError) {
+    throw new Error(deleteRowsError.message);
+  }
+
+  if (uploadedImages.length > 0) {
+    const { error: insertImagesError } = await supabase
+      .from("account_images")
+      .insert(
+        uploadedImages.map((image) => ({
+          account_id: accountId,
+          image_url: image.imageUrl,
+          caption: image.caption,
+          sort_order: image.sortOrder,
+        }))
+      );
+
+    if (insertImagesError) {
+      throw new Error(insertImagesError.message);
+    }
+  }
+
+  const { error: updateThumbnailError } = await supabase
+    .from("accounts")
+    .update({
+      thumbnail_url: uploadedImages[0]?.imageUrl ?? null,
+    })
+    .eq("id", accountId);
+
+  if (updateThumbnailError) {
+    throw new Error(updateThumbnailError.message);
+  }
+
+  const oldPaths = (existingImages ?? [])
+    .map((image) => extractStoragePath(image.image_url as string, bucket))
+    .filter((path): path is string => Boolean(path));
+
+  if (oldPaths.length > 0) {
+    await supabase.storage.from(bucket).remove(oldPaths);
   }
 
   return uploadedImages;
@@ -507,64 +672,23 @@ export async function getAdminAccountById(
 }
 
 export async function replaceAccountImages(accountId: string, files: File[]) {
-  const supabase = getSupabaseAdminClient();
-  const bucket = getStorageBucketName();
-  const { data: existingImages, error: existingError } = await supabase
-    .from("account_images")
-    .select("id, image_url")
-    .eq("account_id", accountId)
-    .order("sort_order", { ascending: true });
-
-  if (existingError) {
-    throw new Error(existingError.message);
-  }
-
   const uploadedImages = await uploadImages(accountId, files);
+  return replaceStoredAccountImages(accountId, uploadedImages);
+}
 
-  const { error: deleteRowsError } = await supabase
-    .from("account_images")
-    .delete()
-    .eq("account_id", accountId);
+export async function replaceAccountImagesWithPendingUploads(
+  accountId: string,
+  uploads: PendingAdminImageUpload[]
+) {
+  const bucket = getStorageBucketName();
+  const supabase = getSupabaseAdminClient();
 
-  if (deleteRowsError) {
-    throw new Error(deleteRowsError.message);
-  }
-
-  if (uploadedImages.length > 0) {
-    const { error: insertImagesError } = await supabase
-      .from("account_images")
-      .insert(
-        uploadedImages.map((image) => ({
-          account_id: accountId,
-          image_url: image.imageUrl,
-          caption: image.caption,
-          sort_order: image.sortOrder,
-        }))
-      );
-
-    if (insertImagesError) {
-      throw new Error(insertImagesError.message);
-    }
-  }
-
-  const { error: updateThumbnailError } = await supabase
-    .from("accounts")
-    .update({
-      thumbnail_url: uploadedImages[0]?.imageUrl ?? null,
-    })
-    .eq("id", accountId);
-
-  if (updateThumbnailError) {
-    throw new Error(updateThumbnailError.message);
-  }
-
-  const oldPaths = (existingImages ?? [])
-    .map((image) => extractStoragePath(image.image_url as string, bucket))
-    .filter((path): path is string => Boolean(path));
-
-  if (oldPaths.length > 0) {
-    await supabase.storage.from(bucket).remove(oldPaths);
-  }
-
-  return uploadedImages;
+  return replaceStoredAccountImages(
+    accountId,
+    uploads.map((upload) => ({
+      imageUrl: supabase.storage.from(bucket).getPublicUrl(upload.path).data.publicUrl,
+      caption: null,
+      sortOrder: upload.sortOrder,
+    }))
+  );
 }

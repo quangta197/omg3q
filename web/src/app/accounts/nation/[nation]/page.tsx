@@ -6,7 +6,6 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { createMetadata } from "@/lib/seo";
 import { buildBreadcrumbSchema, buildItemListSchema } from "@/lib/schema";
 import styles from "../../../route-layout.module.css";
-import { isSupabaseConfigured } from "@/lib/supabase-server";
 import type { NationCode } from "@/lib/types";
 
 export const revalidate = 300;
@@ -41,7 +40,7 @@ export async function generateMetadata({ params }: NationLandingPageProps) {
 
   return createMetadata({
     title: `Nick OMG3Q quoc gia ${nationName}`,
-    description: `Landing page mua nick OMG3Q theo quoc gia ${nationName}, phuc vu truy van co thuoc tinh chien thuat va doi hinh.`,
+    description: `Tong hop nick OMG3Q quoc gia ${nationName} de xem nhanh doi hinh, VIP va gia ban phu hop.`,
     path: `/accounts/nation/${nation}`,
     keywords: [`nick omg3q ${nationName.toLowerCase()}`, `mua nick omg3q ${nationName.toLowerCase()}`],
   });
@@ -59,26 +58,26 @@ export default async function NationLandingPage({
 
   const items = await getAccountsByNation(nation);
 
-  if (!items.length && !isSupabaseConfigured()) {
+  if (!items.length) {
     return (
       <MarketingShell
-        eyebrow="Supabase setup required"
-        title={`Landing page ${nationName} dang cho du lieu that`}
-        description="Trang nay se render tu Supabase sau khi project co env va seed data. Hien tai route da san sang cho SSR va ISR that."
+        eyebrow={`Quốc gia ${nationName}`}
+        title={`Hiện chưa có nick OMG3Q quốc gia ${nationName}`}
+        description="Danh sách sẽ được cập nhật sớm. Bạn có thể xem các quốc gia khác hoặc quay lại trang tổng hợp để lọc nhanh hơn."
         metrics={[
-          { label: "Cluster", value: nationName },
-          { label: "Mode", value: "SSR + ISR" },
-          { label: "Trang thai", value: "Cho setup" },
+          { label: "Quốc gia", value: nationName },
+          { label: "Trạng thái", value: "Đang cập nhật" },
+          { label: "Gợi ý", value: "Xem nhóm khác" },
         ]}
-        sectionTitle="Du lieu can co"
-        sectionText="Can bang nations, servers va accounts trong Supabase. Sau khi seed xong, route nay se co item list va metadata dung theo quoc gia."
+        sectionTitle="Bạn có thể làm gì tiếp theo"
+        sectionText="Nếu muốn chốt nick sớm, hãy xem danh sách tổng để lọc theo server, giá hoặc nhắn shop để được tư vấn."
         bullets={[
-          "Dien .env.local voi URL va anon key.",
-          "Run schema.sql va seed.sql.",
-          "Reload route de kiem tra output.",
+          "Mở danh sách đầy đủ để lọc theo server và mức giá.",
+          "Xem thêm các quốc gia khác đang có tài khoản phù hợp.",
+          "Liên hệ shop để được gửi các nick gần đúng nhu cầu.",
         ]}
         ctaHref="/accounts"
-        ctaLabel="Ve listing tong hop"
+        ctaLabel="Về danh sách tổng"
       />
     );
   }
@@ -96,23 +95,23 @@ export default async function NationLandingPage({
         ]}
       />
       <MarketingShell
-        eyebrow="Landing page theo quoc gia"
-        title={`Nick OMG3Q ${nationName} cho user da co so thich doi hinh`}
-        description={`Cluster theo quoc gia giup bat cac truy van nhu "nick OMG3Q ${nationName}" ma khong can index hang loat to hop filter mong.`}
+        eyebrow="Danh sách theo quốc gia"
+        title={`Nick OMG3Q quốc gia ${nationName} đang bán`}
+        description={`Tổng hợp các tài khoản ${nationName} để bạn xem nhanh đội hình, VIP và giá bán phù hợp.`}
         metrics={[
-          { label: "Cum tu khoa", value: nationName },
-          { label: "So nick mau", value: String(items.length) },
-          { label: "Index mode", value: "Canonical self" },
+          { label: "Quốc gia", value: nationName },
+          { label: "Số nick", value: String(items.length) },
+          { label: "Tình trạng", value: "Đang cập nhật" },
         ]}
-        sectionTitle="Ung dung SEO cho cluster theo quoc gia"
-        sectionText="Trang nay nen duoc bo sung content so sanh doi hinh, uu diem va internal link sang account detail de tang topical depth."
+        sectionTitle="Phù hợp với ai"
+        sectionText="Trang này phù hợp khi bạn đã quen một quốc gia và muốn rút ngắn thời gian so sánh trước khi chốt nick."
         bullets={[
-          "Bat truy van thuoc tinh co y dinh giao dich.",
-          "Ho tro anchor text noi bo tu blog va bang gia.",
-          "De mo rong thanh cluster phu cho VIP hoac muc gia.",
+          "Xem nhanh các nick cùng nhóm tướng quen dùng.",
+          "Dễ so sánh mức giá giữa các tài khoản cùng quốc gia.",
+          "Mở từng trang chi tiết để kiểm tra ảnh và mô tả trước khi chốt.",
         ]}
-        ctaHref="/blog"
-        ctaLabel="Xem bai viet bo tro"
+        ctaHref="/accounts"
+        ctaLabel="Xem toàn bộ nick"
       />
       <div className={styles.stack}>
         <AccountGrid items={items} />

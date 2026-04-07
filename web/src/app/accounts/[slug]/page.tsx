@@ -2,12 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AccountGallery } from "@/components/accounts/AccountGallery";
 import { ContactForm } from "@/components/contact/ContactForm";
-import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { getAccountBySlug, getAccountSlugs } from "@/lib/accounts";
 import { createMetadata, formatPrice } from "@/lib/seo";
 import { buildBreadcrumbSchema, buildProductSchema } from "@/lib/schema";
-import { isSupabaseConfigured } from "@/lib/supabase-server";
 import styles from "./page.module.css";
 
 export const revalidate = 300;
@@ -54,30 +52,6 @@ export default async function AccountDetailPage({
   const account = await getAccountBySlug(slug);
 
   if (!account) {
-    if (!isSupabaseConfigured()) {
-      return (
-        <MarketingShell
-          eyebrow="Supabase setup required"
-          title="Trang chi tiết sẽ có dữ liệu thật sau khi kết nối Supabase."
-          description="App đã sẵn sàng cho SSR và ISR, nhưng project chưa có env hoặc chưa import schema và seed. Điền .env.local rồi chạy schema.sql, seed.sql để route này có dữ liệu."
-          metrics={[
-            { label: "Bước 1", value: "Điền .env.local" },
-            { label: "Bước 2", value: "Run schema.sql" },
-            { label: "Bước 3", value: "Run seed.sql" },
-          ]}
-          sectionTitle="Route này đang dùng data layer thật"
-          sectionText="Không còn mock data runtime cho account detail. Sau khi kết nối Supabase, metadata, schema và rendering đều lấy trực tiếp từ database."
-          bullets={[
-            "Thêm URL và publishable key của Supabase.",
-            "Import schema.sql và seed.sql vào SQL editor.",
-            "Build lại app để kiểm tra route chi tiết.",
-          ]}
-          ctaHref="/accounts"
-          ctaLabel="Mở trang danh sách"
-        />
-      );
-    }
-
     notFound();
   }
 
@@ -153,10 +127,8 @@ export default async function AccountDetailPage({
 
             <div className={styles.statGrid}>
               <div className={styles.statCard}>
-                <span className={styles.statLabel}>Lực chiến</span>
-                <span className={styles.statValue}>
-                  {account.powerScore.toLocaleString("vi-VN")}
-                </span>
+                <span className={styles.statLabel}>VIP</span>
+                <span className={styles.statValue}>VIP {account.vipLevel}</span>
               </div>
               <div className={styles.statCard}>
                 <span className={styles.statLabel}>Server</span>

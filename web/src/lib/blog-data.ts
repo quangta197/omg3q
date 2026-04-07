@@ -10,7 +10,7 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: "bang-gia-nick-omg3q-theo-vip",
-    title: "Bang gia nick OMG3Q theo cap VIP va luc chien",
+    title: "Bang gia nick OMG3Q theo cap VIP va doi hinh",
     description:
       "Tong hop khung gia tham khao cho cac nhom nick OMG3Q theo VIP, server va chat luong doi hinh.",
     category: "Bang gia",

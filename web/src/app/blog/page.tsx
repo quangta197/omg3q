@@ -7,9 +7,9 @@ import { buildBreadcrumbSchema } from "@/lib/schema";
 import styles from "../route-layout.module.css";
 
 export const metadata = createMetadata({
-  title: "Blog OMG3Q cho SEO giao dich va topical authority",
+  title: "Blog OMG3Q: huong dan mua nick an toan va kinh nghiem chon acc",
   description:
-    "Hub bai viet phuc vu organic growth: huong dan an toan, bang gia, so sanh VIP va noi dung noi bo tro giao dich.",
+    "Tong hop bai viet huong dan mua nick OMG3Q an toan, khung gia tham khao va kinh nghiem chon tai khoan phu hop.",
   path: "/blog",
   keywords: ["blog omg3q", "huong dan mua nick omg3q", "kinh nghiem mua nick game"],
 });
@@ -24,19 +24,19 @@ export default function BlogPage() {
         ])}
       />
       <MarketingShell
-        eyebrow="Content hub"
-        title="Blog la bo may topical authority, khong phai muc tin tuc cho co."
-        description="Cum bai viet nay duoc tao de support organic ranking cho landing pages giao dich, khong viet lan man. Moi bai phai co internal link ve cluster phu hop."
+        eyebrow="Kinh nghiệm giao dịch"
+        title="Blog OMG3Q tổng hợp hướng dẫn mua nick an toàn và dễ chọn hơn."
+        description="Tại đây là các bài viết ngắn gọn về cách kiểm tra tài khoản, khung giá tham khảo và những lưu ý cần xem trước khi chốt."
         metrics={[
-          { label: "Tan suat", value: "3 bai / tuan" },
-          { label: "Loai bai", value: "Trust + pricing + strategy" },
-          { label: "Muc tieu", value: "Organic to lead" },
+          { label: "Bài nổi bật", value: String(blogPosts.length) },
+          { label: "Phù hợp", value: "Người mua mới" },
+          { label: "Nội dung", value: "An toàn + giá tham khảo" },
         ]}
-        sectionTitle="Bai viet tru cot can len truoc"
-        sectionText="Sprint dau nen co bai huong dan giao dich an toan, bai bang gia va bai so sanh theo VIP/server. Day la 3 nhom content gay lead ro nhat."
+        sectionTitle="Nên đọc trước khi chốt nick"
+        sectionText="Nếu mới mua lần đầu, hãy xem bài hướng dẫn an toàn trước. Khi cần ước lượng ngân sách, mở bài bảng giá để so sánh nhanh hơn."
         bullets={blogPosts.map((post) => post.title)}
-        ctaHref="/blog/cach-mua-nick-omg3q-an-toan"
-        ctaLabel="Mo bai tru cot dau tien"
+        ctaHref="/accounts"
+        ctaLabel="Xem nick đang bán"
       />
       <div className={styles.stack}>
         <ul className={styles.blogList}>

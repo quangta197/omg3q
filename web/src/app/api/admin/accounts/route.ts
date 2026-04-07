@@ -1,7 +1,11 @@
 import { revalidatePath } from "next/cache";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { replaceAccountImages } from "@/lib/admin-accounts";
+import {
+  type PendingAdminImageUpload,
+  replaceAccountImages,
+  replaceAccountImagesWithPendingUploads,
+} from "@/lib/admin-accounts";
 import { authorizeAdminApiRequest } from "@/lib/admin-session";
 import { getSupabaseAdminClient, hasSupabaseServiceRole } from "@/lib/supabase-admin";
 
@@ -35,6 +39,44 @@ function parseHighlights(raw: string) {
     .split(/\r?\n|,/)
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function parsePendingUploads(formData: FormData) {
+  const raw = normalizeText(formData, "uploaded_images");
+
+  if (!raw) {
+    return [] as PendingAdminImageUpload[];
+  }
+
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error("Danh sách ảnh upload không hợp lệ.");
+  }
+
+  if (!Array.isArray(parsed)) {
+    throw new Error("Danh sách ảnh upload không hợp lệ.");
+  }
+
+  return parsed
+    .map((item) => {
+      const row = item as Partial<PendingAdminImageUpload>;
+
+      return {
+        path: String(row.path || "").trim(),
+        token: String(row.token || "").trim(),
+        publicUrl: String(row.publicUrl || "").trim(),
+        sortOrder: Number(row.sortOrder ?? 0),
+      };
+    })
+    .filter(
+      (item) =>
+        item.path.startsWith("accounts/") &&
+        Number.isFinite(item.sortOrder)
+    )
+    .sort((left, right) => left.sortOrder - right.sortOrder);
 }
 
 function validatePayload(formData: FormData) {
@@ -86,6 +128,21 @@ export async function POST(request: NextRequest) {
   }
 
   const formData = await request.formData();
+  let uploadedImages: PendingAdminImageUpload[] = [];
+
+  try {
+    uploadedImages = parsePendingUploads(formData);
+  } catch (error) {
+    return NextResponse.json(
+      {
+        success: false,
+        message:
+          error instanceof Error ? error.message : "Danh sách ảnh upload không hợp lệ.",
+      },
+      { status: 400 }
+    );
+  }
+
   const validationError = validatePayload(formData);
 
   if (validationError) {
@@ -160,7 +217,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    if (files.length > 0) {
+    if (uploadedImages.length > 0) {
+      await replaceAccountImagesWithPendingUploads(data.id, uploadedImages);
+    } else if (files.length > 0) {
       await replaceAccountImages(data.id, files);
     }
   } catch (imageError) {

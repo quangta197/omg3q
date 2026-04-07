@@ -15,7 +15,7 @@ export const revalidate = 300;
 export const metadata = createMetadata({
   title: "Mua bán nick OMG3Q uy tín, giá tốt theo server và VIP",
   description:
-    "Landing page tổng cho shop nick OMG3Q, tập trung nhu cầu giao dịch thật theo server, VIP, bảng giá và hướng dẫn mua acc an toàn.",
+    "Trang chủ OMG3Q Shop với danh sách nick nổi bật, bộ lọc nhanh theo server và các hướng dẫn mua bán an toàn.",
   path: "/",
   keywords: [
     "mua nick omg3q",
@@ -44,7 +44,6 @@ const quickFilters = [
   { label: "Dưới 500k", href: "/accounts?price_max=500000" },
   { label: "500k - 2tr", href: "/accounts?price_min=500000&price_max=2000000" },
   { label: "Trên 2tr", href: "/accounts?price_min=2000000" },
-  { label: "Lực chiến cao", href: "/accounts?sort=power_desc" },
   { label: "Nick tân thủ", href: "/accounts?price_max=1000000" },
 ];
 
@@ -53,6 +52,7 @@ export default async function Home() {
     getFeaturedAccounts(6),
     getServers(),
   ]);
+
   const serverOptions: SearchableSelectOption[] = servers.map((server) => ({
     value: server.code,
     label: server.name,
@@ -81,9 +81,9 @@ export default async function Home() {
                 Trải Nghiệm Đỉnh Cao
               </h1>
               <p className={styles.heroText}>
-                Hàng ngàn tài khoản lực chiến mạnh, server hot, mô tả rõ ràng và
-                đường dẫn SEO sạch. Từ landing page đến detail page đều tối ưu cho
-                cả desktop lẫn mobile.
+                Hàng ngàn tài khoản server hot, mô tả rõ ràng và dễ so sánh. Từ
+                trang chủ đến trang chi tiết đều được tối ưu cho cả desktop lẫn
+                mobile.
               </p>
 
               <form className={styles.searchPanel} action="/accounts" method="get">
@@ -137,7 +137,7 @@ export default async function Home() {
 
             <AccountGrid
               items={featuredAccounts}
-              emptyMessage="Chưa kết nối Supabase hoặc chưa có nick nổi bật. Hãy import schema.sql, seed.sql và điền .env.local."
+              emptyMessage="Hiện chưa có tài khoản nổi bật. Bạn có thể quay lại sau hoặc liên hệ shop để được tư vấn nhanh."
             />
 
             <div className={styles.trustStrip}>

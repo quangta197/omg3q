@@ -64,7 +64,6 @@ export function AccountGrid({
             <h2 className={styles.title}>{account.title}</h2>
             <div className={styles.metaLine}>
               <span>S{account.server.replace("s", "")}</span>
-              <span>{account.powerScore.toLocaleString("vi-VN")} LC</span>
               <span>VIP {account.vipLevel}</span>
             </div>
             <div className={styles.highlights}>

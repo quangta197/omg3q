@@ -242,8 +242,6 @@ export async function getAccountsWithFilters(
       query = query.order("price", { ascending: true });
     } else if (appliedSort === "price_desc") {
       query = query.order("price", { ascending: false });
-    } else if (appliedSort === "power_desc") {
-      query = query.order("power_score", { ascending: false });
     } else {
       query = query.order("is_featured", { ascending: false }).order("created_at", {
         ascending: false,

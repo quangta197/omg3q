@@ -53,8 +53,7 @@ export type NationOption = {
 export type AccountSort =
   | "newest"
   | "price_asc"
-  | "price_desc"
-  | "power_desc";
+  | "price_desc";
 
 export type AccountListFilters = {
   search?: string;

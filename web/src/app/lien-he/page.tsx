@@ -28,7 +28,7 @@ export default function ContactPage() {
           <h1 className={styles.title}>Liên hệ để giữ nick và chốt giao dịch</h1>
           <p className={styles.description}>
             Nếu bạn chưa chọn xong tài khoản cụ thể, hãy gửi form tại đây. Đội ngũ
-            sẽ tư vấn theo server, phân khúc giá và mức lực chiến phù hợp.
+            sẽ tư vấn theo server, phân khúc giá và nhu cầu phù hợp.
           </p>
           <div className={styles.meta}>
             <a href={`tel:${process.env.NEXT_PUBLIC_PHONE || "0123456789"}`}>

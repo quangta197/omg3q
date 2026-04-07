@@ -5,10 +5,10 @@ type MarketingShellProps = {
   eyebrow: string;
   title: string;
   description: string;
-  metrics: Array<{ label: string; value: string }>;
+  metrics: ReadonlyArray<{ label: string; value: string }>;
   sectionTitle: string;
   sectionText: string;
-  bullets: string[];
+  bullets: ReadonlyArray<string>;
   ctaHref: string;
   ctaLabel: string;
 };

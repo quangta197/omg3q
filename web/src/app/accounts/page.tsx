@@ -25,18 +25,12 @@ const sortOptions: Array<{ value: AccountSort; label: string }> = [
   { value: "newest", label: "Mới nhất" },
   { value: "price_asc", label: "Giá tăng dần" },
   { value: "price_desc", label: "Giá giảm dần" },
-  { value: "power_desc", label: "Lực chiến cao" },
 ];
 
 const pricePresets = [
   { label: "Dưới 500k", priceMax: 500000 },
   { label: "500k - 2tr", priceMin: 500000, priceMax: 2000000 },
   { label: "Trên 2tr", priceMin: 2000000 },
-];
-
-const powerPresets = [
-  { label: "Từ 1M LC", powerMin: 1000000 },
-  { label: "Từ 2M LC", powerMin: 2000000 },
 ];
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -68,7 +62,7 @@ function parsePositiveNumber(value: string | undefined) {
 }
 
 function parseSort(value: string | undefined): AccountSort {
-  if (value === "price_asc" || value === "price_desc" || value === "power_desc") {
+  if (value === "price_asc" || value === "price_desc") {
     return value;
   }
 
@@ -86,15 +80,9 @@ function normalizeFilters(
 
   let priceMin = parsePositiveNumber(firstValue(params.price_min));
   let priceMax = parsePositiveNumber(firstValue(params.price_max));
-  let powerMin = parsePositiveNumber(firstValue(params.power_min));
-  let powerMax = parsePositiveNumber(firstValue(params.power_max));
 
   if (priceMin !== undefined && priceMax !== undefined && priceMin > priceMax) {
     [priceMin, priceMax] = [priceMax, priceMin];
-  }
-
-  if (powerMin !== undefined && powerMax !== undefined && powerMin > powerMax) {
-    [powerMin, powerMax] = [powerMax, powerMin];
   }
 
   return {
@@ -103,8 +91,6 @@ function normalizeFilters(
     nation: nation || undefined,
     priceMin,
     priceMax,
-    powerMin,
-    powerMax,
     sort,
     page,
     limit: DEFAULT_LIMIT,
@@ -134,14 +120,6 @@ function buildAccountsPath(filters: AccountListFilters) {
     params.set("price_max", String(filters.priceMax));
   }
 
-  if (filters.powerMin !== undefined) {
-    params.set("power_min", String(filters.powerMin));
-  }
-
-  if (filters.powerMax !== undefined) {
-    params.set("power_max", String(filters.powerMax));
-  }
-
   if (filters.sort && filters.sort !== "newest") {
     params.set("sort", filters.sort);
   }
@@ -162,8 +140,6 @@ function isDefaultListing(filters: AccountListFilters) {
     filters.nation ||
     filters.priceMin !== undefined ||
     filters.priceMax !== undefined ||
-    filters.powerMin !== undefined ||
-    filters.powerMax !== undefined ||
     (filters.sort && filters.sort !== "newest") ||
     (filters.page && filters.page > 1)
   );
@@ -185,23 +161,17 @@ function formatCompactNumber(value: number) {
   return value.toLocaleString("vi-VN");
 }
 
-function formatRangeLabel(
-  min: number | undefined,
-  max: number | undefined,
-  suffix = ""
-) {
-  const normalizedSuffix = suffix ? ` ${suffix}` : "";
-
+function formatRangeLabel(min: number | undefined, max: number | undefined) {
   if (min !== undefined && max !== undefined) {
-    return `${formatCompactNumber(min)} - ${formatCompactNumber(max)}${normalizedSuffix}`;
+    return `${formatCompactNumber(min)} - ${formatCompactNumber(max)}`;
   }
 
   if (min !== undefined) {
-    return `Từ ${formatCompactNumber(min)}${normalizedSuffix}`;
+    return `Từ ${formatCompactNumber(min)}`;
   }
 
   if (max !== undefined) {
-    return `Dưới ${formatCompactNumber(max)}${normalizedSuffix}`;
+    return `Dưới ${formatCompactNumber(max)}`;
   }
 
   return "";
@@ -256,11 +226,11 @@ export async function generateMetadata({
   const title = filters.search
     ? `Kết quả tìm nick OMG3Q cho "${filters.search}"`
     : hasCustomState
-      ? "Lọc nick OMG3Q theo server, giá và lực chiến"
+      ? "Lọc nick OMG3Q theo server và giá"
       : "Danh sách nick OMG3Q theo server, VIP và mức giá";
   const description = hasCustomState
-    ? "Listing filter dành cho người mua nick OMG3Q theo nhu cầu cụ thể. Các URL lọc được noindex để tránh cannibalize với landing page SEO chính."
-    : "Trang listing tổng hợp để lọc nick OMG3Q theo server, quốc gia, lực chiến và mức giá, đồng thời đẩy internal link sang landing page giao dịch.";
+    ? "Kết quả lọc nick OMG3Q theo server, quốc gia và giá để bạn chọn nhanh tài khoản phù hợp."
+    : "Danh sách nick OMG3Q đang bán, cập nhật theo server, VIP và mức giá.";
 
   return createMetadata({
     title,
@@ -282,6 +252,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
     getNations(),
     getAccountsWithFilters(filters),
   ]);
+
   const serverSelectOptions: SearchableSelectOption[] = servers.map((server) => ({
     value: server.code,
     label: server.name,
@@ -293,6 +264,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
     servers.find((item) => item.code === result.appliedFilters.server)?.name ?? null;
   const nationName =
     nations.find((item) => item.code === result.appliedFilters.nation)?.name ?? null;
+
   const activeFilters = [
     result.appliedFilters.search
       ? {
@@ -322,23 +294,10 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
           href: removeFilter(result.appliedFilters, ["priceMin", "priceMax"]),
         }
       : null,
-    result.appliedFilters.powerMin !== undefined ||
-    result.appliedFilters.powerMax !== undefined
-      ? {
-          label: `Lực chiến: ${formatRangeLabel(
-            result.appliedFilters.powerMin,
-            result.appliedFilters.powerMax,
-            "LC"
-          )}`,
-          href: removeFilter(result.appliedFilters, ["powerMin", "powerMax"]),
-        }
-      : null,
   ].filter(Boolean) as Array<{ label: string; href: string }>;
 
-  const startItem =
-    result.total > 0 ? (result.page - 1) * result.limit + 1 : 0;
-  const endItem =
-    result.total > 0 ? startItem + result.items.length - 1 : 0;
+  const startItem = result.total > 0 ? (result.page - 1) * result.limit + 1 : 0;
+  const endItem = result.total > 0 ? startItem + result.items.length - 1 : 0;
   const paginationItems = buildPageItems(result.page, result.totalPages);
 
   return (
@@ -355,12 +314,11 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
 
       <section className={styles.hero}>
         <div className={styles.heroCopy}>
-          <span className={styles.eyebrow}>Listing giao dịch chính</span>
+          <span className={styles.eyebrow}>Danh sách giao dịch</span>
           <h1 className={styles.title}>Lọc nick OMG3Q theo đúng nhu cầu mua</h1>
           <p className={styles.description}>
-            URL params là nguồn dữ liệu duy nhất cho bộ lọc. Người dùng tìm theo
-            server, quốc gia, giá và lực chiến sẽ ra kết quả rõ ràng hơn, còn
-            crawler vẫn được dồn authority về landing page chuẩn.
+            Tìm nhanh theo server, quốc gia và mức giá. Mỗi tài khoản đều có ảnh,
+            mô tả và tình trạng rõ ràng để bạn so sánh trước khi chốt.
           </p>
         </div>
 
@@ -471,22 +429,6 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
           </div>
 
           <div>
-            <label htmlFor="power_min" className={styles.label}>
-              Lực chiến từ
-            </label>
-            <input
-              id="power_min"
-              name="power_min"
-              type="number"
-              min="0"
-              step="100000"
-              className={styles.input}
-              defaultValue={result.appliedFilters.powerMin ?? ""}
-              placeholder="1000000"
-            />
-          </div>
-
-          <div>
             <label htmlFor="sort" className={styles.label}>
               Sắp xếp
             </label>
@@ -533,33 +475,6 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
               ))}
             </div>
           </div>
-
-          <div className={styles.presetCard}>
-            <span className={styles.presetTitle}>Lọc nhanh theo lực chiến</span>
-            <div className={styles.presetList}>
-              {powerPresets.map((preset) => (
-                <Link
-                  key={preset.label}
-                  href={buildAccountsPath({
-                    ...result.appliedFilters,
-                    ...preset,
-                    page: 1,
-                  })}
-                  className={styles.presetLink}
-                >
-                  {preset.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          <div className={styles.policyCard}>
-            <span className={styles.policyTitle}>Quy tắc SEO</span>
-            <p className={styles.policyText}>
-              Các URL có filter, sort hoặc phân trang đều tự noindex và canonical
-              về listing gốc. Landing page indexable nằm ở nhóm server và quốc gia.
-            </p>
-          </div>
         </div>
       </section>
 
@@ -574,7 +489,12 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
             </p>
           </div>
           <div className={styles.resultsMeta}>
-            <span>{sortOptions.find((item) => item.value === result.appliedFilters.sort)?.label}</span>
+            <span>
+              {
+                sortOptions.find((item) => item.value === result.appliedFilters.sort)
+                  ?.label
+              }
+            </span>
             <span>{result.total.toLocaleString("vi-VN")} kết quả</span>
           </div>
         </div>
@@ -591,7 +511,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
 
         <AccountGrid
           items={result.items}
-          emptyMessage="Không tìm thấy nick phù hợp. Hãy thử nới giá, lực chiến hoặc quay về landing page server/quốc gia."
+          emptyMessage="Không tìm thấy nick phù hợp. Hãy thử nới giá hoặc đổi server và quốc gia."
         />
 
         {result.totalPages > 1 ? (
@@ -645,11 +565,11 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
 
         <div className={styles.supportPanel}>
           <div>
-            <span className={styles.supportEyebrow}>Gợi ý điều hướng</span>
-            <h3 className={styles.supportTitle}>Muốn index mạnh hơn theo intent?</h3>
+            <span className={styles.supportEyebrow}>Gợi ý xem nhanh</span>
+            <h3 className={styles.supportTitle}>Xem nhanh theo server hoặc quốc gia</h3>
             <p className={styles.supportText}>
-              Dùng landing page server hoặc quốc gia để gom authority. Listing này
-              ưu tiên trải nghiệm lọc thật cho người mua.
+              Nếu bạn đã nhắm sẵn nhóm muốn mua, mở các liên kết bên dưới để vào
+              đúng danh sách phù hợp nhanh hơn.
             </p>
           </div>
           <div className={styles.supportLinks}>

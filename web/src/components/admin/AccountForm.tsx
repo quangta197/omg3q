@@ -1,5 +1,6 @@
 "use client";
 
+import { createClient } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
@@ -14,6 +15,13 @@ type ExistingImage = {
   id: string;
   imageUrl: string;
   caption: string | null;
+  sortOrder: number;
+};
+
+type PendingUploadTicket = {
+  path: string;
+  token: string;
+  publicUrl: string;
   sortOrder: number;
 };
 
@@ -50,6 +58,22 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
+function getBrowserSupabaseClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !anonKey) {
+    throw new Error("Thiếu cấu hình Supabase public để upload ảnh.");
+  }
+
+  return createClient(url, anonKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+}
+
 export function AccountForm({
   mode,
   accountId,
@@ -61,11 +85,66 @@ export function AccountForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
   const serverOptions: SearchableSelectOption[] = servers.map((server) => ({
     value: server.id,
     label: server.name,
     keywords: [server.code, server.name],
   }));
+
+  async function uploadImagesDirectly(files: File[]) {
+    const response = await fetch("/api/admin/uploads", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        files: files.map((file) => ({
+          name: file.name,
+          type: file.type,
+          size: file.size,
+        })),
+      }),
+    });
+
+    const data = (await response.json()) as {
+      success?: boolean;
+      bucket?: string;
+      uploads?: PendingUploadTicket[];
+      message?: string;
+    };
+
+    if (!response.ok || !data.success || !data.bucket || !data.uploads) {
+      throw new Error(data.message || "Không tạo được phiên upload ảnh.");
+    }
+
+    if (data.uploads.length !== files.length) {
+      throw new Error("Số lượng ảnh upload không khớp với dữ liệu đã chọn.");
+    }
+
+    const supabase = getBrowserSupabaseClient();
+    const uploadedImages: PendingUploadTicket[] = [];
+
+    for (const [index, file] of files.entries()) {
+      setMessage(`Đang upload ảnh ${index + 1}/${files.length}...`);
+
+      const target = data.uploads[index];
+      const { error: uploadError } = await supabase.storage
+        .from(data.bucket)
+        .uploadToSignedUrl(target.path, target.token, file, {
+          upsert: false,
+          contentType: file.type || undefined,
+        });
+
+      if (uploadError) {
+        throw new Error(uploadError.message);
+      }
+
+      uploadedImages.push(target);
+    }
+
+    return uploadedImages;
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -85,6 +164,16 @@ export function AccountForm({
     setMessage("");
 
     try {
+      const selectedFiles = formData
+        .getAll("images")
+        .filter((value): value is File => value instanceof File && value.size > 0);
+
+      if (selectedFiles.length > 0) {
+        const uploadedImages = await uploadImagesDirectly(selectedFiles);
+        formData.delete("images");
+        formData.set("uploaded_images", JSON.stringify(uploadedImages));
+      }
+
       const response = await fetch(
         mode === "create" ? "/api/admin/accounts" : `/api/admin/accounts/${accountId}`,
         {
@@ -103,16 +192,16 @@ export function AccountForm({
         throw new Error(data.message || "Không thể lưu tài khoản.");
       }
 
-      setMessage(
-        mode === "create" ? "Đã tạo tài khoản mới." : "Đã cập nhật tài khoản."
-      );
+      setMessage(mode === "create" ? "Đã tạo tài khoản mới." : "Đã cập nhật tài khoản.");
       router.push(`/admin/accounts/${data.id}`);
       router.refresh();
     } catch (submitError) {
       setError(
-        submitError instanceof Error
-          ? submitError.message
-          : "Không thể lưu tài khoản."
+        submitError instanceof TypeError && submitError.message === "Failed to fetch"
+          ? "Kết nối upload bị gián đoạn. Hãy thử lại với ít ảnh hơn hoặc kiểm tra mạng."
+          : submitError instanceof Error
+            ? submitError.message
+            : "Không thể lưu tài khoản."
       );
     } finally {
       setIsSubmitting(false);
@@ -210,16 +299,12 @@ export function AccountForm({
           />
         </label>
 
-        <label>
-          <span className={styles.label}>Lực chiến</span>
-          <FormattedNumberInput
-            className={styles.input}
-            name="power_score"
-            defaultValue={initialValues?.powerScore ?? 0}
-            ariaLabel="Lực chiến"
-            required
-          />
-        </label>
+        <input
+          type="hidden"
+          name="power_score"
+          value={String(initialValues?.powerScore ?? 0)}
+          readOnly
+        />
 
         <label>
           <span className={styles.label}>Level</span>
@@ -299,6 +384,7 @@ export function AccountForm({
         />
         <span className={styles.helper}>
           Nếu upload ảnh mới ở chế độ sửa, gallery cũ sẽ được thay bằng bộ ảnh mới.
+          Mỗi ảnh nên dưới 10MB để upload ổn định trên điện thoại.
         </span>
       </label>
 
