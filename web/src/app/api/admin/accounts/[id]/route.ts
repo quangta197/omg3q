@@ -14,6 +14,22 @@ function normalizeNumber(formData: FormData, key: string, fallback = 0) {
   return Number.isFinite(value) ? value : fallback;
 }
 
+function normalizeOptionalNumber(formData: FormData, key: string) {
+  const raw = String(formData.get(key) || "").trim();
+
+  if (!raw) {
+    return null;
+  }
+
+  const value = Number(raw);
+
+  if (!Number.isFinite(value) || value <= 0) {
+    return null;
+  }
+
+  return value;
+}
+
 function parseHighlights(raw: string) {
   return raw
     .split(/\r?\n|,/)
@@ -26,6 +42,8 @@ function validatePayload(formData: FormData) {
   const slug = normalizeText(formData, "slug");
   const serverId = normalizeText(formData, "server_id");
   const price = normalizeNumber(formData, "price");
+  const installmentRaw = normalizeText(formData, "installment_price");
+  const installmentPrice = normalizeOptionalNumber(formData, "installment_price");
 
   if (title.length < 4) {
     return "Tiêu đề phải từ 4 ký tự.";
@@ -41,6 +59,10 @@ function validatePayload(formData: FormData) {
 
   if (price <= 0) {
     return "Giá bán phải lớn hơn 0.";
+  }
+
+  if (installmentRaw && installmentPrice === null) {
+    return "Giá góp phải lớn hơn 0.";
   }
 
   return null;
@@ -100,6 +122,7 @@ export async function PATCH(request: NextRequest, { params }: RouteProps) {
   const serverId = normalizeText(formData, "server_id");
   const nationId = normalizeText(formData, "nation_id");
   const status = normalizeText(formData, "status") || "available";
+  const installmentPrice = normalizeOptionalNumber(formData, "installment_price");
   const highlights = parseHighlights(normalizeText(formData, "highlights"));
   const files = formData
     .getAll("images")
@@ -112,15 +135,15 @@ export async function PATCH(request: NextRequest, { params }: RouteProps) {
     server_id: serverId,
     nation_id: nationId || null,
     price: normalizeNumber(formData, "price"),
-    original_price: normalizeText(formData, "original_price")
-      ? normalizeNumber(formData, "original_price")
-      : null,
     power_score: normalizeNumber(formData, "power_score"),
     level: normalizeNumber(formData, "level", 1),
     vip_level: normalizeNumber(formData, "vip_level"),
     status,
     is_featured: formData.get("is_featured") === "on",
     highlights,
+    ...(installmentPrice !== null
+      ? { installment_price: installmentPrice }
+      : {}),
   };
 
   const { data, error } = await supabase
@@ -131,6 +154,20 @@ export async function PATCH(request: NextRequest, { params }: RouteProps) {
     .single();
 
   if (error) {
+    if (
+      error.message.includes("installment_price") &&
+      error.message.includes("does not exist")
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Database chưa có cột installment_price. Hãy chạy SQL migration trước khi dùng giá góp.",
+        },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
       {
         success: false,

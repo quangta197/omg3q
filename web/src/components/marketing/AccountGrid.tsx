@@ -48,18 +48,18 @@ export function AccountGrid({
             <span className={styles.badgeHot}>
               {account.isFeatured ? "HOT" : "MỚI"}
             </span>
-            <span className={styles.galleryCount}>
-              {account.highlights.length || 3}
-            </span>
+            {account.imageCount > 0 ? (
+              <span className={styles.galleryCount}>{account.imageCount}</span>
+            ) : null}
           </div>
           <div className={styles.body}>
             <div>
-              {account.originalPrice ? (
-                <div className={styles.oldPrice}>
-                  {formatPrice(account.originalPrice)}
+              <div className={styles.price}>{formatPrice(account.price)}</div>
+              {account.installmentPrice ? (
+                <div className={styles.installment}>
+                  Góp từ {formatPrice(account.installmentPrice)}
                 </div>
               ) : null}
-              <div className={styles.price}>{formatPrice(account.price)}</div>
             </div>
             <h2 className={styles.title}>{account.title}</h2>
             <div className={styles.metaLine}>

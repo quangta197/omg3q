@@ -529,7 +529,14 @@ export default async function AdminAccountsPage({
                       </span>
                     </td>
                     <td>
-                      <strong className={styles.price}>{formatPrice(account.price)}</strong>
+                      <div className={styles.priceStack}>
+                        <strong className={styles.price}>{formatPrice(account.price)}</strong>
+                        {account.installmentPrice ? (
+                          <span className={styles.priceSub}>
+                            Góp từ {formatPrice(account.installmentPrice)}
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
                     <td>
                       <span className={styles.updatedAt}>

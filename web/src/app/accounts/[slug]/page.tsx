@@ -118,6 +118,7 @@ export default async function AccountDetailPage({
           },
         ]
       : [];
+  const hasInstallment = account.installmentPrice !== null && account.installmentPrice > 0;
 
   return (
     <>
@@ -136,12 +137,18 @@ export default async function AccountDetailPage({
 
             <div className={styles.headerBlock}>
               <h2 className={styles.title}>{account.title}</h2>
-              {account.originalPrice ? (
-                <div className={styles.oldPrice}>
-                  {formatPrice(account.originalPrice)}
+              <div className={styles.price}>{formatPrice(account.price)}</div>
+              {hasInstallment ? (
+                <div className={styles.installmentCard}>
+                  <span className={styles.installmentLabel}>Hỗ trợ góp từ</span>
+                  <strong className={styles.installmentValue}>
+                    {formatPrice(account.installmentPrice ?? 0)}
+                  </strong>
+                  <span className={styles.installmentHint}>
+                    Inbox shop để thương thảo phương án thanh toán phù hợp.
+                  </span>
                 </div>
               ) : null}
-              <div className={styles.price}>{formatPrice(account.price)}</div>
             </div>
 
             <div className={styles.statGrid}>
@@ -190,6 +197,14 @@ export default async function AccountDetailPage({
                     {statusLabel}
                   </span>
                 </div>
+                {hasInstallment ? (
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>Giá góp tham khảo</span>
+                    <span className={styles.infoValue}>
+                      {formatPrice(account.installmentPrice ?? 0)}
+                    </span>
+                  </div>
+                ) : null}
                 <div className={styles.infoRow}>
                   <span className={styles.infoLabel}>Highlight</span>
                   <span className={styles.infoValue}>
@@ -242,8 +257,14 @@ export default async function AccountDetailPage({
           <ContactForm
             accountId={account.id}
             accountTitle={account.title}
-            title="Giữ nick này ngay"
-            description="Form này đẩy trực tiếp vào contact_requests để đội ngũ xử lý theo thứ tự, giảm sót lead so với chỉ bấm chat."
+            title={hasInstallment ? "Hỏi phương án góp cho nick này" : "Giữ nick này ngay"}
+            description={
+              hasInstallment
+                ? `Form này đẩy trực tiếp vào contact_requests để shop tư vấn phương án góp từ ${formatPrice(
+                    account.installmentPrice ?? 0
+                  )} và chốt lịch thanh toán phù hợp.`
+                : "Form này đẩy trực tiếp vào contact_requests để đội ngũ xử lý theo thứ tự, giảm sót lead so với chỉ bấm chat."
+            }
           />
         </section>
       </main>

@@ -25,6 +25,7 @@ export type AdminAccountListItem = {
   slug: string;
   title: string;
   price: number;
+  installmentPrice: number | null;
   status: "available" | "reserved" | "sold" | "hidden";
   isFeatured: boolean;
   updatedAt: string | null;
@@ -76,7 +77,7 @@ export type AdminAccountEditorRecord = {
   level: number;
   vipLevel: number;
   price: number;
-  originalPrice: number | null;
+  installmentPrice: number | null;
   status: "available" | "reserved" | "sold" | "hidden";
   thumbnailUrl: string | null;
   highlights: string[];
@@ -92,7 +93,7 @@ export type AdminAccountEditorRecord = {
 export type AdminAccountFormOptions = {
   servers: ServerOption[];
   nations: NationOption[];
-};
+  };
 
 function toNumber(value: number | string | null | undefined) {
   if (typeof value === "number") {
@@ -118,6 +119,13 @@ function getRelationName(relation: RelationRecord) {
   return relation.name ?? null;
 }
 
+function isMissingInstallmentColumnError(message: string) {
+  return (
+    message.includes("installment_price") &&
+    message.includes("does not exist")
+  );
+}
+
 function mapAdminListItem(
   item: unknown
 ): AdminAccountListItem {
@@ -126,6 +134,7 @@ function mapAdminListItem(
     slug: string;
     title: string;
     price: number | string;
+    installment_price?: number | string | null;
     status: "available" | "reserved" | "sold" | "hidden";
     is_featured: boolean | null;
     updated_at: string | null;
@@ -139,6 +148,8 @@ function mapAdminListItem(
     slug: row.slug,
     title: row.title,
     price: toNumber(row.price),
+    installmentPrice:
+      row.installment_price == null ? null : toNumber(row.installment_price),
     status: row.status,
     isFeatured: Boolean(row.is_featured),
     updatedAt: row.updated_at,
@@ -316,54 +327,66 @@ export async function getAdminAccountsList(
   const search = normalizeAdminSearch(filters.search);
   const sort = normalizeAdminSort(filters.sort);
   const supabase = getSupabaseAdminClient();
-  let query = supabase
-    .from("accounts")
-    .select(`
+  const buildQuery = (selectClause: string) => {
+    let query = supabase
+      .from("accounts")
+      .select(selectClause, { count: "exact" });
+
+    if (search) {
+      query = query.or(`title.ilike.*${search}*,slug.ilike.*${search}*`);
+    }
+
+    if (filters.status) {
+      query = query.eq("status", filters.status);
+    }
+
+    if (filters.featured === "featured") {
+      query = query.eq("is_featured", true);
+    } else if (filters.featured === "standard") {
+      query = query.eq("is_featured", false);
+    }
+
+    if (filters.serverId) {
+      query = query.eq("server_id", filters.serverId);
+    }
+
+    if (filters.nationId) {
+      query = query.eq("nation_id", filters.nationId);
+    }
+
+    if (sort === "price_desc") {
+      query = query.order("price", { ascending: false });
+    } else if (sort === "price_asc") {
+      query = query.order("price", { ascending: true });
+    } else if (sort === "title_asc") {
+      query = query.order("title", { ascending: true });
+    } else {
+      query = query.order("updated_at", { ascending: false });
+    }
+
+    return query.range(from, to);
+  };
+
+  const queryWithInstallment = `
       id,
       slug,
       title,
       price,
+      installment_price,
       status,
       is_featured,
       updated_at,
       thumbnail_url,
       servers:server_id(name),
       nations:nation_id(name)
-    `, { count: "exact" });
+    `;
+  const queryBase = queryWithInstallment.replace("      installment_price,\n", "");
 
-  if (search) {
-    query = query.or(`title.ilike.*${search}*,slug.ilike.*${search}*`);
+  let { data, error, count } = await buildQuery(queryWithInstallment);
+
+  if (error && isMissingInstallmentColumnError(error.message)) {
+    ({ data, error, count } = await buildQuery(queryBase));
   }
-
-  if (filters.status) {
-    query = query.eq("status", filters.status);
-  }
-
-  if (filters.featured === "featured") {
-    query = query.eq("is_featured", true);
-  } else if (filters.featured === "standard") {
-    query = query.eq("is_featured", false);
-  }
-
-  if (filters.serverId) {
-    query = query.eq("server_id", filters.serverId);
-  }
-
-  if (filters.nationId) {
-    query = query.eq("nation_id", filters.nationId);
-  }
-
-  if (sort === "price_desc") {
-    query = query.order("price", { ascending: false });
-  } else if (sort === "price_asc") {
-    query = query.order("price", { ascending: true });
-  } else if (sort === "title_asc") {
-    query = query.order("title", { ascending: true });
-  } else {
-    query = query.order("updated_at", { ascending: false });
-  }
-
-  const { data, error, count } = await query.range(from, to);
 
   if (error) {
     throw new Error(error.message);
@@ -372,7 +395,7 @@ export async function getAdminAccountsList(
   const total = count ?? 0;
 
   return {
-    items: (data ?? []).map(mapAdminListItem),
+    items: ((data ?? []) as unknown[]).map(mapAdminListItem),
     total,
     page,
     limit,
@@ -394,9 +417,7 @@ export async function getAdminAccountById(
   id: string
 ): Promise<AdminAccountEditorRecord | null> {
   const supabase = getSupabaseAdminClient();
-  const { data, error } = await supabase
-    .from("accounts")
-    .select(`
+  const queryWithInstallment = `
       id,
       slug,
       title,
@@ -407,15 +428,27 @@ export async function getAdminAccountById(
       level,
       vip_level,
       price,
+      installment_price,
       original_price,
       status,
       thumbnail_url,
       highlights,
       is_featured,
       account_images(id, image_url, caption, sort_order)
-    `)
-    .eq("id", id)
-    .maybeSingle();
+    `;
+  const queryBase = queryWithInstallment.replace("      installment_price,\n", "");
+  const buildQuery = (selectClause: string) =>
+    supabase
+      .from("accounts")
+      .select(selectClause)
+      .eq("id", id)
+      .maybeSingle();
+
+  let { data, error } = await buildQuery(queryWithInstallment);
+
+  if (error && isMissingInstallmentColumnError(error.message)) {
+    ({ data, error } = await buildQuery(queryBase));
+  }
 
   if (error) {
     throw new Error(error.message);
@@ -425,7 +458,7 @@ export async function getAdminAccountById(
     return null;
   }
 
-  const row = data as {
+  const row = data as unknown as {
     id: string;
     slug: string;
     title: string;
@@ -436,6 +469,7 @@ export async function getAdminAccountById(
     level: number | null;
     vip_level: number | null;
     price: number | string;
+    installment_price?: number | string | null;
     original_price: number | string | null;
     status: "available" | "reserved" | "sold" | "hidden";
     thumbnail_url: string | null;
@@ -455,8 +489,8 @@ export async function getAdminAccountById(
     level: row.level ?? 1,
     vipLevel: row.vip_level ?? 0,
     price: toNumber(row.price),
-    originalPrice:
-      row.original_price === null ? null : toNumber(row.original_price),
+    installmentPrice:
+      row.installment_price == null ? null : toNumber(row.installment_price),
     status: row.status,
     thumbnailUrl: row.thumbnail_url,
     highlights: row.highlights ?? [],

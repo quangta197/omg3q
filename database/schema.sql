@@ -30,6 +30,7 @@ CREATE TABLE accounts (
     level INT NOT NULL DEFAULT 1,
     vip_level INT DEFAULT 0,
     price DECIMAL(15, 0) NOT NULL,
+    installment_price DECIMAL(15, 0),
     original_price DECIMAL(15, 0),
     status VARCHAR(20) NOT NULL DEFAULT 'available'
         CHECK (status IN ('available', 'reserved', 'sold', 'hidden')),

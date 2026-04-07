@@ -362,8 +362,8 @@ formatPrice(25000000 as number)  → "25 triệu"
 │  │ VIP 12 │ Full đỏ │ 3 Skin │  │← Highlight chips
 │  └────────────────────────────┘  │
 │                                  │
-│  ~~7.000.000₫~~                  │← Original price (gạch ngang)
-│  🔥 5.000.000₫         -29%     │← Sale price + discount badge
+│  🔥 5.000.000₫                  │← Giá bán chính
+│  💳 Góp từ 1.800.000₫           │← Giá góp tham khảo (nếu có)
 │                                  │
 │  [💬 Liên hệ ngay]              │← CTA Button
 └──────────────────────────────────┘
@@ -676,6 +676,7 @@ erDiagram
         int level
         int vip_level
         decimal price
+        decimal installment_price
         decimal original_price
         varchar status
         varchar thumbnail_url
@@ -772,6 +773,7 @@ CREATE TABLE accounts (
     level INT NOT NULL DEFAULT 1,
     vip_level INT DEFAULT 0,
     price DECIMAL(15, 0) NOT NULL,
+    installment_price DECIMAL(15, 0),
     original_price DECIMAL(15, 0),
     status VARCHAR(20) NOT NULL DEFAULT 'available'
         CHECK (status IN ('available', 'reserved', 'sold', 'hidden')),
@@ -1132,6 +1134,7 @@ graph LR
       "level": 120,
       "vip_level": 12,
       "price": 5000000,
+      "installment_price": 1800000,
       "original_price": 7000000,
       "thumbnail_url": "https://xxx.supabase.co/storage/v1/...",
       "highlights": ["VIP 12", "Full tướng đỏ", "3 skin SS"],

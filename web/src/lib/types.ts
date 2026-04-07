@@ -10,7 +10,9 @@ export type AccountSummary = {
   vipLevel: number;
   powerScore: number;
   price: number;
+  installmentPrice: number | null;
   originalPrice: number | null;
+  imageCount: number;
   thumbnailUrl: string | null;
   isFeatured: boolean;
   highlights: string[];
@@ -84,7 +86,8 @@ export type AccountRow = {
   vip_level: number | null;
   power_score: number | null;
   price: number | string;
-  original_price: number | string | null;
+  installment_price?: number | string | null;
+  original_price?: number | string | null;
   is_featured: boolean | null;
   level: number | null;
   status: "available" | "reserved" | "sold" | "hidden";

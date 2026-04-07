@@ -318,6 +318,17 @@
   font-weight: 900;
 }
 
+.priceStack {
+  display: grid;
+  gap: 4px;
+}
+
+.priceSub {
+  color: var(--color-text-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .updatedAt {
   color: var(--color-text-soft);
   font-size: 0.84rem;

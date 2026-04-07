@@ -12,7 +12,7 @@ import type {
   ServerOption,
 } from "@/lib/types";
 
-const ACCOUNT_SELECT = `
+const ACCOUNT_SELECT_BASE = `
   id,
   slug,
   title,
@@ -30,6 +30,17 @@ const ACCOUNT_SELECT = `
   servers:server_id(code,name),
   nations:nation_id(code,name)
 `;
+
+const ACCOUNT_SELECT = `
+  ${ACCOUNT_SELECT_BASE.trim().replace("price,\n  original_price,", "price,\n  installment_price,\n  original_price,")}
+`;
+
+function isMissingInstallmentColumnError(message: string) {
+  return (
+    message.includes("installment_price") &&
+    message.includes("does not exist")
+  );
+}
 
 function getRelationCode(
   relation:
@@ -60,6 +71,11 @@ function toNumber(value: number | string | null | undefined) {
 }
 
 function mapAccountSummary(row: AccountRow): AccountSummary {
+  const imageCount = Math.max(
+    row.account_images?.length ?? 0,
+    row.thumbnail_url ? 1 : 0
+  );
+
   return {
     id: row.id,
     slug: row.slug,
@@ -70,7 +86,10 @@ function mapAccountSummary(row: AccountRow): AccountSummary {
     vipLevel: row.vip_level ?? 0,
     powerScore: row.power_score ?? 0,
     price: toNumber(row.price),
-    originalPrice: row.original_price === null ? null : toNumber(row.original_price),
+    installmentPrice:
+      row.installment_price == null ? null : toNumber(row.installment_price),
+    originalPrice: row.original_price == null ? null : toNumber(row.original_price),
+    imageCount,
     thumbnailUrl: row.thumbnail_url,
     isFeatured: Boolean(row.is_featured),
     highlights: row.highlights ?? [],
@@ -119,18 +138,25 @@ export const getAccounts = cache(async (): Promise<AccountSummary[]> => {
   }
 
   const supabase = getSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("accounts")
-    .select(ACCOUNT_SELECT)
-    .in("status", ["available", "reserved"])
-    .order("is_featured", { ascending: false })
-    .order("created_at", { ascending: false });
+  const buildQuery = (selectClause: string) =>
+    supabase
+      .from("accounts")
+      .select(selectClause)
+      .in("status", ["available", "reserved"])
+      .order("is_featured", { ascending: false })
+      .order("created_at", { ascending: false });
+
+  let { data, error } = await buildQuery(ACCOUNT_SELECT);
+
+  if (error && isMissingInstallmentColumnError(error.message)) {
+    ({ data, error } = await buildQuery(ACCOUNT_SELECT_BASE));
+  }
 
   if (error) {
     throw new Error(error.message);
   }
 
-  return ((data ?? []) as AccountRow[]).map(mapAccountSummary);
+  return ((data ?? []) as unknown as AccountRow[]).map(mapAccountSummary);
 });
 
 async function resolveServerId(serverCode: string) {
@@ -170,60 +196,68 @@ export async function getAccountsWithFilters(
     return emptyResult;
   }
 
-  let query = supabase
-    .from("accounts")
-    .select(ACCOUNT_SELECT, { count: "exact" })
-    .in("status", ["available", "reserved"]);
+  const escapedSearch = filters.search?.replace(/[%:,]/g, " ").trim();
 
-  if (serverId) {
-    query = query.eq("server_id", serverId);
+  if (filters.search && !escapedSearch) {
+    return emptyResult;
   }
 
-  if (nationId) {
-    query = query.eq("nation_id", nationId);
-  }
+  function buildQuery(selectClause: string) {
+    let query = supabase
+      .from("accounts")
+      .select(selectClause, { count: "exact" })
+      .in("status", ["available", "reserved"]);
 
-  if (filters.priceMin !== undefined) {
-    query = query.gte("price", filters.priceMin);
-  }
-
-  if (filters.priceMax !== undefined) {
-    query = query.lte("price", filters.priceMax);
-  }
-
-  if (filters.powerMin !== undefined) {
-    query = query.gte("power_score", filters.powerMin);
-  }
-
-  if (filters.powerMax !== undefined) {
-    query = query.lte("power_score", filters.powerMax);
-  }
-
-  if (filters.search) {
-    const escapedSearch = filters.search.replace(/[%:,]/g, " ").trim();
-
-    if (!escapedSearch) {
-      return emptyResult;
+    if (serverId) {
+      query = query.eq("server_id", serverId);
     }
 
-    query = query.or(
-      `title.ilike.*${escapedSearch}*,description.ilike.*${escapedSearch}*`
-    );
+    if (nationId) {
+      query = query.eq("nation_id", nationId);
+    }
+
+    if (filters.priceMin !== undefined) {
+      query = query.gte("price", filters.priceMin);
+    }
+
+    if (filters.priceMax !== undefined) {
+      query = query.lte("price", filters.priceMax);
+    }
+
+    if (filters.powerMin !== undefined) {
+      query = query.gte("power_score", filters.powerMin);
+    }
+
+    if (filters.powerMax !== undefined) {
+      query = query.lte("power_score", filters.powerMax);
+    }
+
+    if (escapedSearch) {
+      query = query.or(
+        `title.ilike.*${escapedSearch}*,description.ilike.*${escapedSearch}*`
+      );
+    }
+
+    if (appliedSort === "price_asc") {
+      query = query.order("price", { ascending: true });
+    } else if (appliedSort === "price_desc") {
+      query = query.order("price", { ascending: false });
+    } else if (appliedSort === "power_desc") {
+      query = query.order("power_score", { ascending: false });
+    } else {
+      query = query.order("is_featured", { ascending: false }).order("created_at", {
+        ascending: false,
+      });
+    }
+
+    return query.range(from, to);
   }
 
-  if (appliedSort === "price_asc") {
-    query = query.order("price", { ascending: true });
-  } else if (appliedSort === "price_desc") {
-    query = query.order("price", { ascending: false });
-  } else if (appliedSort === "power_desc") {
-    query = query.order("power_score", { ascending: false });
-  } else {
-    query = query.order("is_featured", { ascending: false }).order("created_at", {
-      ascending: false,
-    });
-  }
+  let { data, count, error } = await buildQuery(ACCOUNT_SELECT);
 
-  const { data, count, error } = await query.range(from, to);
+  if (error && isMissingInstallmentColumnError(error.message)) {
+    ({ data, count, error } = await buildQuery(ACCOUNT_SELECT_BASE));
+  }
 
   if (error) {
     throw new Error(error.message);
@@ -232,7 +266,7 @@ export async function getAccountsWithFilters(
   const total = count ?? 0;
 
   return {
-    items: ((data ?? []) as AccountRow[]).map(mapAccountSummary),
+    items: ((data ?? []) as unknown as AccountRow[]).map(mapAccountSummary),
     total,
     page,
     limit,
@@ -253,19 +287,26 @@ export const getFeaturedAccounts = cache(
     }
 
     const supabase = getSupabaseServerClient();
-    const { data, error } = await supabase
-      .from("accounts")
-      .select(ACCOUNT_SELECT)
-      .eq("is_featured", true)
-      .in("status", ["available", "reserved"])
-      .order("created_at", { ascending: false })
-      .limit(limit);
+    const buildQuery = (selectClause: string) =>
+      supabase
+        .from("accounts")
+        .select(selectClause)
+        .eq("is_featured", true)
+        .in("status", ["available", "reserved"])
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+    let { data, error } = await buildQuery(ACCOUNT_SELECT);
+
+    if (error && isMissingInstallmentColumnError(error.message)) {
+      ({ data, error } = await buildQuery(ACCOUNT_SELECT_BASE));
+    }
 
     if (error) {
       throw new Error(error.message);
     }
 
-    return ((data ?? []) as AccountRow[]).map(mapAccountSummary);
+    return ((data ?? []) as unknown as AccountRow[]).map(mapAccountSummary);
   }
 );
 
@@ -276,12 +317,19 @@ export const getAccountBySlug = cache(
     }
 
     const supabase = getSupabaseServerClient();
-    const { data, error } = await supabase
-      .from("accounts")
-      .select(ACCOUNT_SELECT)
-      .eq("slug", slug)
-      .in("status", ["available", "reserved", "sold"])
-      .maybeSingle();
+    const buildQuery = (selectClause: string) =>
+      supabase
+        .from("accounts")
+        .select(selectClause)
+        .eq("slug", slug)
+        .in("status", ["available", "reserved", "sold"])
+        .maybeSingle();
+
+    let { data, error } = await buildQuery(ACCOUNT_SELECT);
+
+    if (error && isMissingInstallmentColumnError(error.message)) {
+      ({ data, error } = await buildQuery(ACCOUNT_SELECT_BASE));
+    }
 
     if (error) {
       throw new Error(error.message);
@@ -291,7 +339,7 @@ export const getAccountBySlug = cache(
       return null;
     }
 
-    return mapAccountDetail(data as AccountRow);
+    return mapAccountDetail(data as unknown as AccountRow);
   }
 );
 

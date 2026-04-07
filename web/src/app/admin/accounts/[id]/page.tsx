@@ -67,7 +67,7 @@ export default async function EditAdminAccountPage({
             level: account.level,
             vipLevel: account.vipLevel,
             price: account.price,
-            originalPrice: account.originalPrice,
+            installmentPrice: account.installmentPrice,
             status: account.status,
             highlights: account.highlights,
             isFeatured: account.isFeatured,

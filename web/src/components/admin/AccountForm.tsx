@@ -6,6 +6,7 @@ import {
   SearchableSelect,
   type SearchableSelectOption,
 } from "@/components/ui/SearchableSelect";
+import { FormattedNumberInput } from "@/components/ui/FormattedNumberInput";
 import type { NationOption, ServerOption } from "@/lib/types";
 import styles from "./AccountForm.module.css";
 
@@ -29,7 +30,7 @@ type AccountFormProps = {
     level: number;
     vipLevel: number;
     price: number;
-    originalPrice: number | null;
+    installmentPrice: number | null;
     status: "available" | "reserved" | "sold" | "hidden";
     highlights: string[];
     isFeatured: boolean;
@@ -190,59 +191,54 @@ export function AccountForm({
 
         <label>
           <span className={styles.label}>Giá bán</span>
-          <input
+          <FormattedNumberInput
             className={styles.input}
             name="price"
-            type="number"
-            min="0"
-            defaultValue={initialValues?.price ?? ""}
+            defaultValue={initialValues?.price ?? null}
+            ariaLabel="Giá bán"
             required
           />
         </label>
 
         <label>
-          <span className={styles.label}>Giá gốc</span>
-          <input
+          <span className={styles.label}>Giá góp tham khảo</span>
+          <FormattedNumberInput
             className={styles.input}
-            name="original_price"
-            type="number"
-            min="0"
-            defaultValue={initialValues?.originalPrice ?? ""}
+            name="installment_price"
+            defaultValue={initialValues?.installmentPrice ?? null}
+            ariaLabel="Giá góp tham khảo"
           />
         </label>
 
         <label>
           <span className={styles.label}>Lực chiến</span>
-          <input
+          <FormattedNumberInput
             className={styles.input}
             name="power_score"
-            type="number"
-            min="0"
             defaultValue={initialValues?.powerScore ?? 0}
+            ariaLabel="Lực chiến"
             required
           />
         </label>
 
         <label>
           <span className={styles.label}>Level</span>
-          <input
+          <FormattedNumberInput
             className={styles.input}
             name="level"
-            type="number"
-            min="1"
             defaultValue={initialValues?.level ?? 1}
+            ariaLabel="Level"
             required
           />
         </label>
 
         <label>
           <span className={styles.label}>VIP</span>
-          <input
+          <FormattedNumberInput
             className={styles.input}
             name="vip_level"
-            type="number"
-            min="0"
             defaultValue={initialValues?.vipLevel ?? 0}
+            ariaLabel="VIP"
             required
           />
         </label>

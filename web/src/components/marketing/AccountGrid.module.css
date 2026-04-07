@@ -117,11 +117,11 @@
   line-height: 1;
 }
 
-.oldPrice {
-  margin-bottom: 4px;
-  color: var(--color-text-mute);
-  text-decoration: line-through;
-  font-size: 0.84rem;
+.installment {
+  margin-top: 5px;
+  color: var(--color-text-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .title {
