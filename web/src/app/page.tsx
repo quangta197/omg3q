@@ -48,7 +48,11 @@ const quickFilters = [
   { label: "Nick tân thủ", href: "/accounts?price_max=1000000" },
 ];
 
-const HARD_CODED_HOME_BANNER_URL = "/omg_banner.png";
+const HOME_BANNER_SOURCES = {
+  desktop: "/banner_pc.png",
+  tablet: "/banner_ipad.png",
+  mobile: "/banner_mobile.jpg",
+};
 const HARD_CODED_HOME_BANNER_HREF = "/accounts";
 const HARD_CODED_HOME_BANNER_ALT = "Banner giao dịch chính chủ nick VIP OMG3Q Shop";
 
@@ -82,20 +86,29 @@ export default async function Home() {
               <div
                 className={[
                   styles.bannerShell,
-                  HARD_CODED_HOME_BANNER_URL ? styles.bannerShellFullWidth : "",
+                  HOME_BANNER_SOURCES.desktop ? styles.bannerShellFullWidth : "",
                 ]
                   .filter(Boolean)
                   .join(" ")}
               >
-                {HARD_CODED_HOME_BANNER_URL ? (
+                {HOME_BANNER_SOURCES.desktop ? (
                   <article className={styles.bannerFrame}>
                     <Link href={HARD_CODED_HOME_BANNER_HREF} className={styles.bannerImageLink}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={HARD_CODED_HOME_BANNER_URL}
-                        alt={HARD_CODED_HOME_BANNER_ALT}
-                        className={styles.bannerImage}
-                      />
+                      <picture>
+                        <source
+                          media="(max-width: 767px)"
+                          srcSet={HOME_BANNER_SOURCES.mobile}
+                        />
+                        <source
+                          media="(max-width: 1180px)"
+                          srcSet={HOME_BANNER_SOURCES.tablet}
+                        />
+                        <img
+                          src={HOME_BANNER_SOURCES.desktop}
+                          alt={HARD_CODED_HOME_BANNER_ALT}
+                          className={styles.bannerImage}
+                        />
+                      </picture>
                     </Link>
                   </article>
                 ) : (

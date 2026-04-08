@@ -185,50 +185,59 @@ async function optimizeImageForUpload(file: File) {
     return file;
   }
 
-  const image = await loadImageElement(file);
-  const longestEdge = Math.max(image.naturalWidth, image.naturalHeight);
-  const targetScale =
-    longestEdge > MAX_OPTIMIZED_IMAGE_DIMENSION
-      ? MAX_OPTIMIZED_IMAGE_DIMENSION / longestEdge
-      : 1;
-  const targetWidth = Math.max(1, Math.round(image.naturalWidth * targetScale));
-  const targetHeight = Math.max(1, Math.round(image.naturalHeight * targetScale));
-  const shouldResize =
-    targetWidth !== image.naturalWidth || targetHeight !== image.naturalHeight;
-  const shouldCompress = shouldResize || file.size >= IMAGE_OPTIMIZE_THRESHOLD_BYTES;
+  try {
+    const image = await loadImageElement(file);
+    const longestEdge = Math.max(image.naturalWidth, image.naturalHeight);
+    const targetScale =
+      longestEdge > MAX_OPTIMIZED_IMAGE_DIMENSION
+        ? MAX_OPTIMIZED_IMAGE_DIMENSION / longestEdge
+        : 1;
+    const targetWidth = Math.max(1, Math.round(image.naturalWidth * targetScale));
+    const targetHeight = Math.max(1, Math.round(image.naturalHeight * targetScale));
+    const shouldResize =
+      targetWidth !== image.naturalWidth || targetHeight !== image.naturalHeight;
+    const shouldCompress = shouldResize || file.size >= IMAGE_OPTIMIZE_THRESHOLD_BYTES;
 
-  if (!shouldCompress) {
+    if (!shouldCompress) {
+      return file;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      return file;
+    }
+
+    context.drawImage(image, 0, 0, targetWidth, targetHeight);
+
+    const optimizedBlob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, "image/webp", OPTIMIZED_IMAGE_QUALITY);
+    });
+
+    if (!optimizedBlob) {
+      return file;
+    }
+
+    if (
+      optimizedBlob.size >= file.size * 0.95 &&
+      file.size < IMAGE_OPTIMIZE_THRESHOLD_BYTES * 1.5
+    ) {
+      return file;
+    }
+
+    return new File([optimizedBlob], getOptimizedImageFileName(file), {
+      type: "image/webp",
+      lastModified: file.lastModified,
+    });
+  } catch {
+    // Some mobile browsers fail to decode large JPEGs for canvas optimization.
+    // Falling back to the original file is better than blocking the whole batch.
     return file;
   }
-
-  const canvas = document.createElement("canvas");
-  canvas.width = targetWidth;
-  canvas.height = targetHeight;
-
-  const context = canvas.getContext("2d");
-
-  if (!context) {
-    return file;
-  }
-
-  context.drawImage(image, 0, 0, targetWidth, targetHeight);
-
-  const optimizedBlob = await new Promise<Blob | null>((resolve) => {
-    canvas.toBlob(resolve, "image/webp", OPTIMIZED_IMAGE_QUALITY);
-  });
-
-  if (!optimizedBlob) {
-    return file;
-  }
-
-  if (optimizedBlob.size >= file.size * 0.95 && file.size < IMAGE_OPTIMIZE_THRESHOLD_BYTES * 1.5) {
-    return file;
-  }
-
-  return new File([optimizedBlob], getOptimizedImageFileName(file), {
-    type: "image/webp",
-    lastModified: file.lastModified,
-  });
 }
 
 async function uploadFileToSignedUrlWithRetry(
