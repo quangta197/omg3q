@@ -11,15 +11,15 @@ import styles from "./page.module.css";
 export const revalidate = 300;
 
 export const metadata = createMetadata({
-  title: "Blog OMG3Q | Kinh nghiệm mua nick, bảng giá và chọn acc",
+  title: "Blog OMG3Q | Kinh nghiệm mua acc, bảng giá và chọn acc",
   description:
-    "Blog OMG3Q tổng hợp hướng dẫn mua nick an toàn, chọn acc cho tân thủ, kinh nghiệm chọn server và bảng giá nick OMG3Q.",
+    "Blog OMG3Q tổng hợp hướng dẫn mua acc an toàn, chọn acc cho tân thủ, kinh nghiệm chọn server và bảng giá tham khảo.",
   path: "/blog",
   keywords: [
     "blog omg3q",
-    "kinh nghiệm mua nick omg3q",
+    "kinh nghiệm mua acc omg3q",
     "shop acc omg3q",
-    "bảng giá nick omg3q",
+    "bảng giá acc omg3q",
   ],
 });
 
@@ -36,18 +36,18 @@ export default async function BlogPage() {
       />
       <MarketingShell
         eyebrow="Kinh nghiệm giao dịch"
-        title="Blog OMG3Q giúp bạn mua nick đúng nhu cầu và an toàn hơn"
-        description="Cụm bài viết này được viết để gom intent tìm kiếm như mua nick OMG3Q, shop acc OMG3Q và bảng giá nick OMG3Q, sau đó dẫn người đọc về listing và account detail thật."
+        title="Blog OMG3Q giúp bạn mua acc đúng nhu cầu và an toàn hơn"
+        description="Tổng hợp các bài viết dễ đọc về cách mua acc, cách xem bảng giá, chọn server và những lưu ý quan trọng trước khi chốt acc."
         metrics={[
           { label: "Bài đang có", value: String(blogPosts.length) },
           { label: "Tập trung", value: "An toàn + giá + chọn acc" },
-          { label: "Mục tiêu", value: "Đọc xong là lọc được nick" },
+          { label: "Mục tiêu", value: "Đọc xong dễ chọn acc hơn" },
         ]}
         sectionTitle="Nên đọc gì trước khi chốt acc"
-        sectionText="Nếu bạn mới mua lần đầu, hãy đọc bài về an toàn giao dịch trước. Nếu đang phân vân ngân sách, xem bảng giá. Nếu đang ngợp vì quá nhiều lựa chọn, bắt đầu từ bài chọn nick cho tân thủ."
+        sectionText="Nếu bạn mua lần đầu, hãy đọc bài về an toàn giao dịch trước. Nếu đang phân vân ngân sách, xem bảng giá. Nếu đang ngợp vì quá nhiều lựa chọn, bắt đầu từ bài chọn acc cho tân thủ."
         bullets={blogPosts.slice(0, 4).map((post) => post.title)}
         ctaHref="/accounts"
-        ctaLabel="Mở danh sách nick OMG3Q"
+        ctaLabel="Mở danh sách acc OMG3Q"
       />
 
       <div className={styles.stack}>
@@ -55,7 +55,7 @@ export default async function BlogPage() {
           <div className={styles.panelHead}>
             <div>
               <span className={styles.eyebrow}>Tất cả bài viết</span>
-              <h2 className={styles.title}>Cluster nội dung bán nick OMG3Q giai đoạn đầu</h2>
+              <h2 className={styles.title}>Những nội dung nên đọc trước khi mua acc</h2>
             </div>
             <Link href="/bang-gia-nick-omg3q" className={styles.secondaryLink}>
               Xem bảng giá
@@ -88,11 +88,11 @@ export default async function BlogPage() {
           <section className={styles.panel}>
             <div className={styles.panelHead}>
               <div>
-                <span className={styles.eyebrow}>Nick nổi bật</span>
-                <h2 className={styles.title}>Đi tiếp từ blog sang account detail thật</h2>
+                <span className={styles.eyebrow}>Acc nổi bật</span>
+                <h2 className={styles.title}>Một vài tài khoản đáng xem ngay lúc này</h2>
               </div>
               <Link href="/accounts" className={styles.primaryLink}>
-                Xem toàn bộ listing
+                Xem toàn bộ acc
               </Link>
             </div>
 

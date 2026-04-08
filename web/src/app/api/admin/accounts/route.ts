@@ -302,7 +302,7 @@ export async function POST(request: NextRequest) {
         message:
           imageError instanceof Error
             ? imageError.message
-            : "Tạo nick thành công nhưng upload ảnh thất bại.",
+            : "Tạo acc thành công nhưng upload ảnh thất bại.",
       },
       { status: 500 }
     );

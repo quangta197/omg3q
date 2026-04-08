@@ -19,8 +19,8 @@ export function SiteFooter() {
             </span>
           </div>
           <p className={styles.description}>
-            Hệ thống mua bán tài khoản OMG 3Q theo hướng marketplace rõ thông tin,
-            rõ giá và tối ưu chuyển đổi trên di động lẫn desktop.
+            Shop mua bán acc OMG3Q với ảnh thật, mô tả rõ ràng và hỗ trợ chốt
+            giao dịch nhanh qua Zalo, Messenger hoặc hotline.
           </p>
           <div className={styles.socials}>
             <a href={process.env.NEXT_PUBLIC_FB_PAGE || "#"} aria-label="Messenger">
@@ -35,26 +35,26 @@ export function SiteFooter() {
         </div>
 
         <div className={styles.column}>
-          <h3>Về Chúng Tôi</h3>
-          <Link href="/">Giới thiệu</Link>
-          <Link href="/accounts">Mua nick</Link>
-          <Link href="/bang-gia-nick-omg3q">Ký gửi</Link>
+          <h3>Về OMG3Q Shop</h3>
+          <Link href="/">Trang chủ</Link>
+          <Link href="/accounts">Mua acc</Link>
+          <Link href="/bang-gia-nick-omg3q">Bảng giá</Link>
           <Link href="/blog">Tin tức</Link>
         </div>
 
         <div className={styles.column}>
-          <h3>Hỗ Trợ Khách Hàng</h3>
-          <Link href="/blog/cach-mua-nick-omg3q-an-toan">Hướng dẫn mua nick</Link>
+          <h3>Hỗ trợ khách hàng</h3>
+          <Link href="/blog/cach-mua-nick-omg3q-an-toan">Hướng dẫn mua acc</Link>
           <Link href="/bang-gia-nick-omg3q">Bảng giá tham khảo</Link>
-          <Link href="/accounts/server/s1">Nick theo server</Link>
-          <Link href="/accounts/nation/nguy">Nick theo quốc gia</Link>
+          <Link href="/accounts/server/s1">Acc theo server</Link>
+          <Link href="/accounts/nation/nguy">Acc theo quốc gia</Link>
         </div>
 
         <div className={styles.column}>
-          <h3>Liên Hệ</h3>
+          <h3>Liên hệ</h3>
           <p className={styles.newsText}>
-            Gửi nhu cầu mua acc, giữ nick hoặc cần shop lọc tài khoản phù hợp theo
-            ngân sách.
+            Gửi nhu cầu mua acc, giữ acc hoặc nhờ shop lọc tài khoản phù hợp
+            theo ngân sách.
           </p>
           <div className={styles.socials}>
             <a href={`tel:${process.env.NEXT_PUBLIC_PHONE || "0366710837"}`}>

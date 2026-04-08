@@ -18,7 +18,7 @@ function SetupNotice() {
   return (
     <section className={styles.setupCard}>
       <h2>Thiếu cấu hình admin</h2>
-      <p>CMS cần service role key và bucket storage để sửa nick có ảnh.</p>
+      <p>CMS cần service role key và bucket storage để sửa acc có ảnh.</p>
       <code>SUPABASE_SERVICE_ROLE_KEY=your-service-role-key</code>
       <code>SUPABASE_STORAGE_BUCKET=account-images</code>
     </section>

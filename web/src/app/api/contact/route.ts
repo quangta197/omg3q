@@ -72,7 +72,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        message: "Supabase chưa được cấu hình.",
+        message: "Hệ thống liên hệ đang tạm gián đoạn. Vui lòng thử lại sau ít phút.",
       },
       { status: 503 }
     );
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        message: "Payload không hợp lệ.",
+        message: "Dữ liệu gửi lên không hợp lệ.",
       },
       { status: 400 }
     );
@@ -123,15 +123,11 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
-    const message =
-      error.message.includes("contact_requests") || error.message.includes("schema cache")
-        ? "Bảng contact_requests chưa sẵn sàng. Hãy cập nhật SQL trong Supabase trước khi dùng form."
-        : "Không thể gửi yêu cầu lúc này. Vui lòng thử lại hoặc liên hệ Zalo trực tiếp.";
-
     return NextResponse.json(
       {
         success: false,
-        message,
+        message:
+          "Không thể gửi yêu cầu lúc này. Vui lòng thử lại hoặc liên hệ Zalo, Messenger để được hỗ trợ nhanh.",
       },
       { status: 500 }
     );

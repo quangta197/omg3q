@@ -62,7 +62,7 @@ function SetupNotice() {
     <section className={styles.setupCard}>
       <h2>Thiếu cấu hình admin</h2>
       <p>
-        CMS cần `SUPABASE_SERVICE_ROLE_KEY` để tạo nick, lọc dữ liệu và upload ảnh
+        CMS cần `SUPABASE_SERVICE_ROLE_KEY` để tạo acc, lọc dữ liệu và upload ảnh
         lên storage.
       </p>
       <code>SUPABASE_SERVICE_ROLE_KEY=your-service-role-key</code>
@@ -265,15 +265,15 @@ export default async function AdminAccountsPage({
         <div>
           <h2 className={styles.heading}>Danh sách tài khoản</h2>
           <p className={styles.subheading}>
-            Chuyển sang kiểu quản trị theo bảng để tìm, lọc và sửa 100-200 nick dễ
+            Chuyển sang kiểu quản trị theo bảng để tìm, lọc và sửa 100-200 acc dễ
             hơn hẳn card grid.
           </p>
         </div>
         <div className={styles.toolbarActions}>
           <div className={styles.resultMeta}>
             {result.total > 0
-              ? `Đang xem ${visibleRangeStart}-${visibleRangeEnd} / ${result.total} nick`
-              : "Chưa có nick nào theo bộ lọc hiện tại"}
+              ? `Đang xem ${visibleRangeStart}-${visibleRangeEnd} / ${result.total} acc`
+              : "Chưa có acc nào theo bộ lọc hiện tại"}
           </div>
           <Link href="/admin/accounts/new" className={styles.primaryAction}>
             Tạo tài khoản mới
@@ -283,7 +283,7 @@ export default async function AdminAccountsPage({
 
       <div className={styles.summaryGrid}>
         <article className={styles.summaryCard}>
-          <span className={styles.summaryLabel}>Tổng nick</span>
+          <span className={styles.summaryLabel}>Tổng acc</span>
           <strong className={styles.summaryValue}>{overview.total}</strong>
           <span className={styles.summaryHint}>Toàn bộ kho dữ liệu admin</span>
         </article>
@@ -299,7 +299,7 @@ export default async function AdminAccountsPage({
         <article className={styles.summaryCard}>
           <span className={styles.summaryLabel}>Nổi bật</span>
           <strong className={styles.summaryValue}>{overview.featured}</strong>
-          <span className={styles.summaryHint}>Nick đang được đẩy nổi bật</span>
+          <span className={styles.summaryHint}>Acc đang được đẩy nổi bật</span>
         </article>
         <article className={styles.summaryCard}>
           <span className={styles.summaryLabel}>Đã bán / Ẩn</span>
@@ -430,7 +430,7 @@ export default async function AdminAccountsPage({
       <div className={styles.tableCard}>
         <div className={styles.tableHeader}>
           <div>
-            <h3 className={styles.sectionTitle}>Kho dữ liệu nick</h3>
+            <h3 className={styles.sectionTitle}>Kho dữ liệu acc</h3>
             <p className={styles.sectionText}>
               Tập trung vào thao tác tìm nhanh, đổi trạng thái ngay trong bảng và chỉ
               vào màn sửa khi thật sự cần chỉnh sâu.
@@ -457,7 +457,7 @@ export default async function AdminAccountsPage({
               {result.items.length === 0 ? (
                 <tr>
                   <td className={styles.emptyState} colSpan={6}>
-                    Không có nick nào khớp bộ lọc. Hãy đổi từ khóa hoặc bỏ bớt điều
+                    Không có acc nào khớp bộ lọc. Hãy đổi từ khóa hoặc bỏ bớt điều
                     kiện lọc.
                   </td>
                 </tr>

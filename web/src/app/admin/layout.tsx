@@ -7,7 +7,7 @@ import styles from "./layout.module.css";
 
 export const metadata: Metadata = createMetadata({
   title: "Admin CMS OMG3Q Shop",
-  description: "Khu vực quản trị để nhập dữ liệu nick OMG3Q và tải ảnh.",
+  description: "Khu vực quản trị để nhập dữ liệu acc OMG3Q và tải ảnh.",
   path: "/admin",
   noIndex: true,
 });

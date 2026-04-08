@@ -82,7 +82,9 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
           <div className={styles.panelHead}>
             <div>
               <span className={styles.eyebrow}>Nội dung chính</span>
-              <h2 className={styles.title}>Đi thẳng vào các điểm ảnh hưởng tới quyết định mua acc</h2>
+              <h2 className={styles.title}>
+                Đi thẳng vào các điểm ảnh hưởng tới quyết định mua acc
+              </h2>
             </div>
             <span className={styles.readingTime}>{post.readTime}</span>
           </div>
@@ -111,8 +113,10 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
         <section className={styles.panel}>
           <div className={styles.panelHead}>
             <div>
-              <span className={styles.eyebrow}>Internal link</span>
-              <h2 className={styles.title}>Đi tiếp sang listing, bảng giá và trang hỗ trợ đúng ngữ cảnh</h2>
+              <span className={styles.eyebrow}>Xem thêm</span>
+              <h2 className={styles.title}>
+                Mở tiếp các trang liên quan để so sánh và chốt acc dễ hơn
+              </h2>
             </div>
           </div>
 
@@ -130,11 +134,11 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
           <section className={styles.panel}>
             <div className={styles.panelHead}>
               <div>
-                <span className={styles.eyebrow}>Acc đang nổi bật</span>
-                <h2 className={styles.title}>Từ bài viết đi thẳng sang account detail thật</h2>
+                <span className={styles.eyebrow}>Acc nổi bật</span>
+                <h2 className={styles.title}>Một vài tài khoản đáng xem ngay lúc này</h2>
               </div>
               <Link href="/accounts" className={styles.primaryLink}>
-                Xem toàn bộ nick OMG3Q
+                Xem toàn bộ acc OMG3Q
               </Link>
             </div>
 

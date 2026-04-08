@@ -419,7 +419,7 @@ async function syncStoredAccountImages(
   const normalizedImages = normalizeGalleryItems(images);
 
   if (normalizedImages.length > MAX_ADMIN_IMAGE_COUNT) {
-    throw new Error(`Chỉ được lưu tối đa ${MAX_ADMIN_IMAGE_COUNT} ảnh cho mỗi nick.`);
+    throw new Error(`Chỉ được lưu tối đa ${MAX_ADMIN_IMAGE_COUNT} ảnh cho mỗi acc.`);
   }
 
   const supabase = getSupabaseAdminClient();

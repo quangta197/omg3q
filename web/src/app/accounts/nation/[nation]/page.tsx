@@ -39,12 +39,13 @@ export async function generateMetadata({ params }: NationLandingPageProps) {
   }
 
   return createMetadata({
-    title: `Nick OMG3Q quốc gia ${nationName}`,
-    description: `Tổng hợp nick OMG3Q quốc gia ${nationName} để xem nhanh đội hình, VIP và giá bán phù hợp.`,
+    title: `Acc OMG3Q quốc gia ${nationName}`,
+    description: `Tổng hợp acc OMG3Q quốc gia ${nationName} để xem nhanh đội hình, VIP và giá bán phù hợp.`,
     path: `/accounts/nation/${nation}`,
     keywords: [
+      `acc omg3q ${nationName.toLowerCase()}`,
+      `mua acc omg3q ${nationName.toLowerCase()}`,
       `nick omg3q ${nationName.toLowerCase()}`,
-      `mua nick omg3q ${nationName.toLowerCase()}`,
     ],
   });
 }
@@ -65,7 +66,7 @@ export default async function NationLandingPage({
     return (
       <MarketingShell
         eyebrow={`Quốc gia ${nationName}`}
-        title={`Hiện chưa có nick OMG3Q quốc gia ${nationName}`}
+        title={`Hiện chưa có acc OMG3Q quốc gia ${nationName}`}
         description="Danh sách sẽ được cập nhật sớm. Bạn có thể xem các quốc gia khác hoặc quay lại trang tổng hợp để lọc nhanh hơn."
         metrics={[
           { label: "Quốc gia", value: nationName },
@@ -73,11 +74,11 @@ export default async function NationLandingPage({
           { label: "Gợi ý", value: "Xem nhóm khác" },
         ]}
         sectionTitle="Bạn có thể làm gì tiếp theo"
-        sectionText="Nếu muốn chốt nick sớm, hãy xem danh sách tổng để lọc theo server, giá hoặc nhắn shop để được tư vấn."
+        sectionText="Nếu muốn chốt acc sớm, hãy xem danh sách tổng để lọc theo server, giá hoặc nhắn shop để được tư vấn."
         bullets={[
           "Mở danh sách đầy đủ để lọc theo server và mức giá.",
           "Xem thêm các quốc gia khác đang có tài khoản phù hợp.",
-          "Liên hệ shop để được gửi các nick gần đúng nhu cầu.",
+          "Liên hệ shop để được gửi các acc gần đúng nhu cầu.",
         ]}
         ctaHref="/accounts"
         ctaLabel="Về danh sách tổng"
@@ -91,7 +92,7 @@ export default async function NationLandingPage({
         data={[
           buildBreadcrumbSchema([
             { name: "Trang chủ", path: "/" },
-            { name: "Danh sách nick", path: "/accounts" },
+            { name: "Danh sách acc", path: "/accounts" },
             { name: nationName, path: `/accounts/nation/${nation}` },
           ]),
           buildItemListSchema(`/accounts/nation/${nation}`, items),
@@ -99,22 +100,22 @@ export default async function NationLandingPage({
       />
       <MarketingShell
         eyebrow="Danh sách theo quốc gia"
-        title={`Nick OMG3Q quốc gia ${nationName} đang bán`}
+        title={`Acc OMG3Q quốc gia ${nationName} đang bán`}
         description={`Tổng hợp các tài khoản ${nationName} để bạn xem nhanh đội hình, VIP và giá bán phù hợp.`}
         metrics={[
           { label: "Quốc gia", value: nationName },
-          { label: "Số nick", value: String(items.length) },
+          { label: "Số acc", value: String(items.length) },
           { label: "Tình trạng", value: "Đang cập nhật" },
         ]}
         sectionTitle="Phù hợp với ai"
-        sectionText="Trang này phù hợp khi bạn đã quen một quốc gia và muốn rút ngắn thời gian so sánh trước khi chốt nick."
+        sectionText="Trang này phù hợp khi bạn đã quen một quốc gia và muốn rút ngắn thời gian so sánh trước khi chốt acc."
         bullets={[
-          "Xem nhanh các nick cùng nhóm tướng quen dùng.",
+          "Xem nhanh các acc cùng nhóm tướng quen dùng.",
           "Dễ so sánh mức giá giữa các tài khoản cùng quốc gia.",
           "Mở từng trang chi tiết để kiểm tra ảnh và mô tả trước khi chốt.",
         ]}
         ctaHref="/accounts"
-        ctaLabel="Xem toàn bộ nick"
+        ctaLabel="Xem toàn bộ acc"
       />
       <div className={styles.stack}>
         <AccountGrid items={items} />

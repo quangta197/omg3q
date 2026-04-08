@@ -11,7 +11,7 @@ type AccountGridProps = {
 
 export function AccountGrid({
   items,
-  emptyMessage = "Chưa có dữ liệu account từ Supabase. Hãy setup env và seed database.",
+  emptyMessage = "Hiện chưa có tài khoản phù hợp. Bạn có thể quay lại sau hoặc liên hệ shop để được tư vấn nhanh.",
 }: AccountGridProps) {
   if (!items.length) {
     return <p className={styles.empty}>{emptyMessage}</p>;

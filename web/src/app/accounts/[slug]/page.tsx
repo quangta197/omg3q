@@ -4,8 +4,16 @@ import { AccountGallery } from "@/components/accounts/AccountGallery";
 import { ContactForm } from "@/components/contact/ContactForm";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { getAccountBySlug, getAccountSlugs } from "@/lib/accounts";
-import { createMetadata, formatPrice } from "@/lib/seo";
-import { buildBreadcrumbSchema, buildProductSchema } from "@/lib/schema";
+import {
+  createMetadata,
+  DEFAULT_SOCIAL_IMAGE_PATH,
+  formatPrice,
+} from "@/lib/seo";
+import {
+  buildBreadcrumbSchema,
+  buildProductSchema,
+  buildWebPageSchema,
+} from "@/lib/schema";
 import styles from "./page.module.css";
 
 export const revalidate = 300;
@@ -25,23 +33,28 @@ export async function generateMetadata({ params }: AccountDetailPageProps) {
 
   if (!account) {
     return createMetadata({
-      title: "Nick OMG3Q không tồn tại",
+      title: "Acc OMG3Q không tồn tại",
       description: "Trang không tồn tại hoặc đã được ẩn khỏi danh sách.",
       path: `/accounts/${slug}`,
       noIndex: true,
     });
   }
 
+  const previewImage =
+    account.thumbnailUrl ?? account.images[0]?.imageUrl ?? DEFAULT_SOCIAL_IMAGE_PATH;
+
   return createMetadata({
     title: account.title,
     description: account.description,
     path: `/accounts/${slug}`,
     keywords: [
-      "chi tiết nick omg3q",
+      "chi tiết acc omg3q",
       account.server,
       `vip ${account.vipLevel}`,
       account.nation,
     ],
+    image: previewImage,
+    imageAlt: account.title,
   });
 }
 
@@ -55,10 +68,19 @@ export default async function AccountDetailPage({
     notFound();
   }
 
+  const previewImage =
+    account.thumbnailUrl ?? account.images[0]?.imageUrl ?? DEFAULT_SOCIAL_IMAGE_PATH;
+
   const jsonLdData = [
+    buildWebPageSchema({
+      name: account.title,
+      description: account.description,
+      path: `/accounts/${account.slug}`,
+      image: previewImage,
+    }),
     buildBreadcrumbSchema([
       { name: "Trang chủ", path: "/" },
-      { name: "Danh sách nick", path: "/accounts" },
+      { name: "Danh sách acc", path: "/accounts" },
       { name: account.title, path: `/accounts/${account.slug}` },
     ]),
     buildProductSchema(account),
@@ -92,7 +114,8 @@ export default async function AccountDetailPage({
           },
         ]
       : [];
-  const hasInstallment = account.installmentPrice !== null && account.installmentPrice > 0;
+  const hasInstallment =
+    account.installmentPrice !== null && account.installmentPrice > 0;
 
   return (
     <>
@@ -119,7 +142,7 @@ export default async function AccountDetailPage({
                     {formatPrice(account.installmentPrice ?? 0)}
                   </strong>
                   <span className={styles.installmentHint}>
-                    Inbox shop để thương thảo phương án thanh toán phù hợp.
+                    Inbox shop để trao đổi phương án thanh toán phù hợp.
                   </span>
                 </div>
               ) : null}
@@ -139,8 +162,8 @@ export default async function AccountDetailPage({
             <div className={styles.notice}>
               <div className={styles.noticeTitle}>Bảo hiểm giao dịch</div>
               <p className={styles.noticeText}>
-                Tài khoản này được hỗ trợ xác minh bởi OMG3Q Shop. Hoàn tiền nếu có
-                sai khác thông tin so với mô tả đã công khai.
+                Tài khoản này được shop hỗ trợ xác minh. Nếu có sai khác lớn so với
+                mô tả công khai, bạn sẽ được hỗ trợ xử lý nhanh.
               </p>
             </div>
 
@@ -182,7 +205,7 @@ export default async function AccountDetailPage({
                   <span className={styles.infoValue}>
                     {account.highlights.length
                       ? account.highlights.join(", ")
-                      : "VIP mạnh, đội hình sẵn sàng chiến"}
+                      : "Đội hình ổn định, vào game là chơi được ngay"}
                   </span>
                 </div>
               </div>
@@ -192,7 +215,7 @@ export default async function AccountDetailPage({
               <h3 className={styles.infoTitle}>Mô tả chi tiết</h3>
               <p className={styles.description}>
                 {account.description ||
-                  "Nick đã build ổn định, phù hợp người cần giá tốt và muốn vào game nhanh."}
+                  "Acc đã build ổn định, phù hợp người cần giá tốt và muốn vào game nhanh."}
               </p>
             </section>
 
@@ -229,13 +252,13 @@ export default async function AccountDetailPage({
           <ContactForm
             accountId={account.id}
             accountTitle={account.title}
-            title={hasInstallment ? "Hỏi phương án góp cho nick này" : "Giữ nick này ngay"}
+            title={hasInstallment ? "Hỏi phương án góp cho acc này" : "Giữ acc này ngay"}
             description={
               hasInstallment
-                ? `Form này đẩy trực tiếp vào contact_requests để shop tư vấn phương án góp từ ${formatPrice(
+                ? `Để lại thông tin để shop tư vấn phương án góp từ ${formatPrice(
                     account.installmentPrice ?? 0
                   )} và chốt lịch thanh toán phù hợp.`
-                : "Form này đẩy trực tiếp vào contact_requests để đội ngũ xử lý theo thứ tự, giảm sót lead so với chỉ bấm chat."
+                : "Để lại thông tin để shop giữ acc, xác nhận giá và hướng dẫn bàn giao rõ ràng."
             }
           />
         </section>

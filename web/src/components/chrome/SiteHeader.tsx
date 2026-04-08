@@ -4,7 +4,7 @@ import styles from "./SiteHeader.module.css";
 
 const navItems = [
   { href: "/", label: "Trang Chủ" },
-  { href: "/accounts", label: "Mua Nick" },
+  { href: "/accounts", label: "Mua Acc" },
   // { href: "/bang-gia-nick-omg3q", label: "Bảng Giá" },
   // { href: "/blog", label: "Tin Tức" },
 ];

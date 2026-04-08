@@ -533,6 +533,13 @@
   color: var(--color-accent);
 }
 
+.listingSummary {
+  margin-top: 10px;
+  color: var(--color-text-soft);
+  font-size: 0.94rem;
+  line-height: 1.68;
+}
+
 .sortBox {
   display: flex;
   align-items: center;

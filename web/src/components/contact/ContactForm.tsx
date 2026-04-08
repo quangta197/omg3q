@@ -24,8 +24,8 @@ const initialState: SubmitState = {
 export function ContactForm({
   accountId,
   accountTitle,
-  title = "Gửi yêu cầu giữ nick",
-  description = "Điền thông tin để shop chốt lại giá, giữ tài khoản và hướng dẫn giao dịch an toàn.",
+  title = "Gửi yêu cầu giữ acc",
+  description = "Điền thông tin để shop chốt lại giá, giữ tài khoản và hướng dẫn bàn giao rõ ràng.",
 }: ContactFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitState, setSubmitState] = useState<SubmitState>(initialState);
@@ -87,7 +87,7 @@ export function ContactForm({
   return (
     <section className={styles.shell}>
       <div className={styles.head}>
-        <span className={styles.eyebrow}>Lead form</span>
+        <span className={styles.eyebrow}>Liên hệ nhanh</span>
         <h2 className={styles.title}>{title}</h2>
         <p className={styles.description}>{description}</p>
         {accountTitle ? (
@@ -141,7 +141,7 @@ export function ContactForm({
               <option value="zalo">Zalo</option>
               <option value="phone">Điện thoại</option>
               <option value="facebook">Messenger</option>
-              <option value="form">Form trước, chốt sau</option>
+              <option value="form">Nhắn trước, chốt sau</option>
             </select>
           </label>
         </div>
@@ -152,7 +152,7 @@ export function ContactForm({
             className={styles.textarea}
             name="message"
             rows={5}
-            placeholder="Ví dụ: Mình muốn giữ nick này đến tối, check giúp giá cuối và quy trình đổi thông tin."
+            placeholder="Ví dụ: Mình muốn giữ acc này đến tối, check giúp giá cuối và quy trình đổi thông tin."
           />
         </label>
 
@@ -171,7 +171,7 @@ export function ContactForm({
             {isSubmitting ? "Đang gửi..." : "Gửi yêu cầu"}
           </button>
           <p className={styles.helper}>
-            Ưu tiên lead từ form để đội ngũ xử lý theo thứ tự và giữ đúng lịch sử liên hệ.
+            Điền đủ thông tin để shop gọi lại nhanh hơn và giữ đúng tài khoản bạn đang quan tâm.
           </p>
         </div>
       </form>

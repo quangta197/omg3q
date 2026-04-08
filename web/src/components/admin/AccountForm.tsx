@@ -114,7 +114,7 @@ function getBrowserSupabaseClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !publicKey) {
-    throw new Error("Thiếu cấu hình Supabase public để upload ảnh.");
+    throw new Error("Thiếu cấu hình cần thiết để tải ảnh lên.");
   }
 
   return createClient(url, publicKey, {
@@ -275,7 +275,7 @@ async function uploadFileToSignedUrlWithRetry(
 
   throw lastError instanceof Error
     ? lastError
-    : new Error("Không thể upload ảnh lên Supabase Storage.");
+    : new Error("Không thể tải ảnh lên kho lưu trữ.");
 }
 
 function getSubmitErrorMessage(error: unknown) {
@@ -468,7 +468,7 @@ export function AccountForm({
 
     setGalleryItems((currentItems) => {
       if (currentItems.length + files.length > MAX_GALLERY_IMAGE_COUNT) {
-        setError(`Tối đa ${MAX_GALLERY_IMAGE_COUNT} ảnh cho mỗi nick.`);
+        setError(`Tối đa ${MAX_GALLERY_IMAGE_COUNT} ảnh cho mỗi acc.`);
         return currentItems;
       }
 

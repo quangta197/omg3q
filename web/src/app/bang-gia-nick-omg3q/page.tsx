@@ -11,15 +11,15 @@ import styles from "./page.module.css";
 export const revalidate = 300;
 
 export const metadata = createMetadata({
-  title: "Bảng Giá Nick OMG3Q | Theo VIP, Server và Đội Hình",
+  title: "Bảng Giá Acc OMG3Q | Theo VIP, Server và Đội Hình",
   description:
-    "Bảng giá nick OMG3Q tham khảo theo VIP, server, quốc gia và độ đẹp đội hình. Dùng để khoanh ngân sách trước khi xem listing và chốt acc.",
+    "Bảng giá acc OMG3Q tham khảo theo VIP, server, quốc gia và độ đẹp đội hình. Dùng để khoanh ngân sách trước khi xem acc cụ thể.",
   path: "/bang-gia-nick-omg3q",
   keywords: [
-    "bảng giá nick omg3q",
-    "giá nick omg3q",
     "bảng giá acc omg3q",
-    "giá nick omg3q vip 12",
+    "giá acc omg3q",
+    "bảng giá acc omg3q",
+    "giá acc omg3q vip 12",
   ],
 });
 
@@ -42,7 +42,7 @@ const priceBands = [
     title: "Nhóm acc VIP mạnh",
     value: "Trên 5 triệu",
     description:
-      "Phù hợp người cần lực chiến cao, đội hình nổi bật hoặc acc đã hoàn thiện ở mức sâu hơn.",
+      "Phù hợp người cần acc nổi bật hơn, đội hình đẹp hơn hoặc nền tài nguyên sâu hơn.",
     href: "/accounts?price_min=5000000",
   },
 ];
@@ -59,27 +59,27 @@ export default async function PricingPage() {
       <JsonLd
         data={buildBreadcrumbSchema([
           { name: "Trang chủ", path: "/" },
-          { name: "Bảng giá nick OMG3Q", path: "/bang-gia-nick-omg3q" },
+          { name: "Bảng giá acc OMG3Q", path: "/bang-gia-nick-omg3q" },
         ])}
       />
       <MarketingShell
         eyebrow="Bảng giá tham khảo"
-        title="Bảng giá nick OMG3Q theo VIP, server và độ đẹp đội hình"
-        description="Trang này giúp bạn khoanh ngân sách trước khi quay về listing để xem ảnh thật, mô tả rõ và chốt acc phù hợp hơn."
+        title="Bảng giá acc OMG3Q theo VIP, server và độ đẹp đội hình"
+        description="Trang này giúp bạn khoanh ngân sách trước khi quay về danh sách acc để xem ảnh thật, mô tả rõ và chốt acc phù hợp hơn."
         metrics={[
           { label: "Phù hợp", value: "Người đang so sánh ngân sách" },
           { label: "Dùng để", value: "Ước lượng nhanh trước khi chốt" },
-          { label: "Đi tiếp", value: "Listing + chi tiết account" },
+          { label: "Đi tiếp", value: "Danh sách acc + chi tiết acc" },
         ]}
         sectionTitle="Cách dùng bảng giá cho đúng"
-        sectionText="Đừng chốt acc chỉ dựa vào mức giá. Hãy dùng bảng giá như bộ lọc đầu tiên, sau đó quay lại danh sách nick OMG3Q và mở từng trang chi tiết để xem ảnh thật, highlights và quy trình bàn giao."
+        sectionText="Đừng chốt acc chỉ dựa vào mức giá. Hãy dùng bảng giá như bộ lọc đầu tiên, sau đó quay lại danh sách acc OMG3Q và mở từng trang chi tiết để xem ảnh thật, highlights và quy trình bàn giao."
         bullets={[
           "So sánh acc cùng một tầm tiền trước khi ra quyết định.",
           "Đối chiếu thêm server, quốc gia và mức độ hoàn thiện đội hình.",
-          "Ưu tiên listing có gallery ảnh thật và mô tả rõ ràng.",
+          "Ưu tiên những acc có gallery ảnh thật và mô tả rõ ràng.",
         ]}
         ctaHref="/accounts"
-        ctaLabel="Xem danh sách nick OMG3Q"
+        ctaLabel="Xem danh sách acc OMG3Q"
       />
 
       <div className={styles.stack}>
@@ -112,21 +112,21 @@ export default async function PricingPage() {
           <div className={styles.panelHead}>
             <div>
               <span className={styles.eyebrow}>Lối đi nhanh</span>
-              <h2 className={styles.title}>Đi thẳng tới landing và nhóm acc đang có hàng</h2>
+              <h2 className={styles.title}>Mở nhanh những nhóm acc đang có hàng</h2>
             </div>
           </div>
 
           <div className={styles.linkGrid}>
             <Link href="/accounts" className={styles.linkCard}>
-              <strong>Danh sách nick OMG3Q</strong>
-              <p>Mở listing tổng để lọc theo server, giá và quốc gia trong một bước.</p>
+              <strong>Danh sách acc OMG3Q</strong>
+              <p>Mở toàn bộ danh sách để lọc theo server, giá và quốc gia trong một bước.</p>
             </Link>
 
             <Link
               href="/blog/cach-mua-nick-omg3q-an-toan"
               className={styles.linkCard}
             >
-              <strong>Cách mua nick an toàn</strong>
+              <strong>Cách mua acc an toàn</strong>
               <p>Đọc checklist trước khi chốt để tránh mua nhầm hoặc thiếu bước bàn giao.</p>
             </Link>
 
@@ -136,8 +136,8 @@ export default async function PricingPage() {
                 href={`/accounts/server/${serverCode}`}
                 className={styles.linkCard}
               >
-                <strong>Nick server {serverCode.toUpperCase()}</strong>
-                <p>Xem nhanh landing đang có hàng thật để giảm thời gian tìm kiếm.</p>
+                <strong>Acc server {serverCode.toUpperCase()}</strong>
+                <p>Xem nhanh những acc đang có sẵn ở nhóm server này.</p>
               </Link>
             ))}
           </div>
@@ -147,8 +147,8 @@ export default async function PricingPage() {
           <section className={styles.panel}>
             <div className={styles.panelHead}>
               <div>
-                <span className={styles.eyebrow}>Nick nổi bật</span>
-                <h2 className={styles.title}>Một số account đang đáng tham khảo trong từng tầm giá</h2>
+                <span className={styles.eyebrow}>Acc nổi bật</span>
+                <h2 className={styles.title}>Một số account đáng tham khảo trong từng tầm giá</h2>
               </div>
             </div>
 
@@ -160,7 +160,7 @@ export default async function PricingPage() {
           <div className={styles.panelHead}>
             <div>
               <span className={styles.eyebrow}>Đọc tiếp</span>
-              <h2 className={styles.title}>Bài blog hỗ trợ chốt acc sáng hơn</h2>
+              <h2 className={styles.title}>Bài blog hỗ trợ chọn acc sáng hơn</h2>
             </div>
             <Link href="/blog" className={styles.secondaryLink}>
               Xem toàn bộ blog

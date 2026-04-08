@@ -1,18 +1,23 @@
 import type { Metadata } from "next";
 
 export const siteConfig = {
-  name: "OMG3Q Shop",
-  defaultTitle: "OMG3Q Shop | Mua bán nick OMG3Q uy tín, giá tốt",
+  name: "OMG3Q Shop - Giao Dịch Uy Tín",
+  defaultTitle: "OMG3Q Shop | Mua Bán Nick OMG3Q An Toàn & Bảo Mật",
   defaultDescription:
-    "Shop mua bán nick OMG3Q ưu tiên SEO và chuyển đổi, tập trung server hot, phân khúc VIP và hướng dẫn giao dịch an toàn.",
+    "Shop chuyên doanh acc OMG3Q với quy trình kiểm soát nick kỹ càng. Hình ảnh thực tế, mô tả chi tiết từng acc, hỗ trợ giao dịch trực tiếp và bảo hành cho người mua.",
   defaultKeywords: [
+    "mua acc omg3q",
+    "shop acc omg3q",
+    "acc omg3q giá rẻ",
+    "acc omg3q uy tín",
     "mua nick omg3q",
-    "ban nick omg3q",
-    "shop nick omg3q",
-    "nick omg3q gia re",
-    "nick omg3q uy tin",
+    "bán nick omg3q",
+    "địa chỉ mua acc omg3q tin cậy"
   ],
 };
+
+export const DEFAULT_SOCIAL_IMAGE_PATH = "/banner_ipad.png";
+export const ORGANIZATION_LOGO_PATH = "/logo-mark.svg";
 
 function normalizeSiteUrl(value: string) {
   return value.startsWith("http") ? value : `https://${value}`;
@@ -44,12 +49,18 @@ export function absoluteUrl(path = "/") {
   return `${siteUrl}${normalizedPath}`;
 }
 
+export function toAbsoluteMediaUrl(path: string) {
+  return path.startsWith("http") ? path : absoluteUrl(path);
+}
+
 type MetadataInput = {
   title: string;
   description: string;
   path: string;
   keywords?: string[];
   noIndex?: boolean;
+  image?: string;
+  imageAlt?: string;
 };
 
 export function createMetadata({
@@ -58,8 +69,12 @@ export function createMetadata({
   path,
   keywords = [],
   noIndex = false,
+  image = DEFAULT_SOCIAL_IMAGE_PATH,
+  imageAlt,
 }: MetadataInput): Metadata {
   const url = absoluteUrl(path);
+  const socialImage = toAbsoluteMediaUrl(image);
+  const socialImageAlt = imageAlt ?? title;
 
   return {
     title,
@@ -75,18 +90,31 @@ export function createMetadata({
       siteName: siteConfig.name,
       locale: "vi_VN",
       type: "website",
+      images: [
+        {
+          url: socialImage,
+          alt: socialImageAlt,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
+      images: [socialImage],
     },
     robots: {
       index: !noIndex,
       follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
       googleBot: {
         index: !noIndex,
         follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
       },
     },
   };

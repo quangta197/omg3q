@@ -45,7 +45,7 @@ export function HomeSortControl({
         value={value}
         onChange={handleChange}
         className={selectClassName}
-        aria-label="Sắp xếp tài khoản nổi bật"
+        aria-label="Sắp xếp danh sách tài khoản"
         disabled={isPending}
       >
         <option value="newest">Mới nhất</option>

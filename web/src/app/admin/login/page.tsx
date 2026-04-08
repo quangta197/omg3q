@@ -11,8 +11,8 @@ import { createMetadata } from "@/lib/seo";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = createMetadata({
-  title: "Đăng nhập Admin CMS OMG3Q",
-  description: "Đăng nhập khu vực quản trị nội dung OMG3Q Shop.",
+  title: "Đăng nhập quản trị OMG3Q Shop",
+  description: "Đăng nhập khu vực quản trị nội dung của OMG3Q Shop.",
   path: "/admin/login",
   noIndex: true,
 });
@@ -26,14 +26,14 @@ type AdminLoginPageProps = {
 
 function getReasonMessage(reason?: string) {
   if (reason === "setup") {
-    return "Xác thực admin chưa được cấu hình đầy đủ trên môi trường hiện tại.";
+    return "Phần đăng nhập quản trị chưa được cấu hình đầy đủ trên môi trường hiện tại.";
   }
 
   if (reason === "auth") {
-    return "Bạn cần đăng nhập lại để truy cập admin CMS.";
+    return "Bạn cần đăng nhập lại để truy cập khu quản trị.";
   }
 
-  return "Chỉ email admin nằm trong danh sách cho phép mới được đăng nhập.";
+  return "Chỉ email quản trị nằm trong danh sách cho phép mới đăng nhập được.";
 }
 
 export default async function AdminLoginPage({
@@ -53,7 +53,7 @@ export default async function AdminLoginPage({
     <section className={styles.page}>
       <div className={styles.panel}>
         <span className={styles.eyebrow}>Đăng nhập admin</span>
-        <h1 className={styles.title}>Khóa truy cập CMS trước khi chỉnh dữ liệu</h1>
+        <h1 className={styles.title}>Xác thực trước khi chỉnh dữ liệu</h1>
         <p className={styles.description}>{getReasonMessage(params.reason)}</p>
       </div>
 
@@ -72,10 +72,10 @@ export default async function AdminLoginPage({
         </div>
       ) : (
         <div className={styles.panel}>
-          <h2 className={styles.sectionTitle}>Đăng nhập bằng Supabase Auth</h2>
+          <h2 className={styles.sectionTitle}>Đăng nhập tài khoản quản trị</h2>
           <p className={styles.description}>
-            Sau khi xác thực thành công, app sẽ tạo phiên admin `HttpOnly` để bảo vệ
-            `/admin` và `/api/admin`.
+            Sau khi đăng nhập thành công, hệ thống sẽ tạo phiên bảo mật để bảo vệ toàn bộ khu
+            quản trị và API admin.
           </p>
           <AdminLoginForm nextPath={nextPath || ADMIN_HOME_PATH} />
         </div>

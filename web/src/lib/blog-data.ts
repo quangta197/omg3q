@@ -3,10 +3,10 @@ import type { BlogPost } from "@/lib/types";
 export const blogPosts: BlogPost[] = [
   {
     slug: "cach-mua-nick-omg3q-an-toan",
-    title: "Cách mua nick OMG3Q an toàn: checklist trước khi chốt acc",
+    title: "Cách mua acc OMG3Q an toàn: checklist trước khi chốt acc",
     description:
-      "Checklist thực tế để mua nick OMG3Q an toàn, kiểm tra đúng quyền sở hữu, thông tin bàn giao và tránh chốt nhầm acc không đúng mô tả.",
-    category: "Hướng dẫn mua nick",
+      "Checklist thực tế để mua acc OMG3Q an toàn, kiểm tra đúng quyền sở hữu, thông tin bàn giao và tránh chốt nhầm acc không đúng mô tả.",
+    category: "Hướng dẫn mua acc",
     readTime: "6 phút đọc",
     intro:
       "Người mua mới thường sợ nhất hai chuyện: chuyển khoản xong không nhận được acc, hoặc nhận acc nhưng thông tin khác xa ảnh shop đăng. Cách xử lý không phải hỏi thật nhiều, mà là kiểm tra đúng 5 điểm quan trọng trước khi chốt.",
@@ -24,11 +24,11 @@ export const blogPosts: BlogPost[] = [
       {
         heading: "Ưu tiên shop có ảnh thật, mô tả thật và giá công khai",
         paragraphs: [
-          "Một listing tốt phải có ảnh tài khoản rõ ràng, nêu được server, quốc gia, VIP, mức lực chiến và tình trạng hiện tại của acc. Nếu mô tả quá chung chung hoặc chỉ ghi giá mà không có ảnh thật, rủi ro mua nhầm sẽ cao hơn nhiều.",
+          "Một trang đăng bán tốt phải có ảnh tài khoản rõ ràng, nêu được server, quốc gia, VIP, mức lực chiến và tình trạng hiện tại của acc. Nếu mô tả quá chung chung hoặc chỉ ghi giá mà không có ảnh thật, rủi ro mua nhầm sẽ cao hơn nhiều.",
           "Khi so sánh nhiều acc cùng tầm tiền, hãy nhìn vào phần highlights và ảnh chụp thực chiến trước, đừng chỉ nhìn mỗi VIP. Với OMG3Q, sự khác biệt giữa đội hình, tài nguyên và độ hoàn thiện mới là thứ làm giá lệch mạnh.",
         ],
         bullets: [
-          "Ưu tiên listing có gallery ảnh đủ góc.",
+          "Ưu tiên trang đăng có gallery ảnh đủ góc.",
           "Xem rõ server, quốc gia, VIP và mô tả đội hình.",
           "Không chốt acc chỉ dựa vào một ảnh đại diện.",
         ],
@@ -55,7 +55,7 @@ export const blogPosts: BlogPost[] = [
     ],
     faq: [
       {
-        question: "Mua nick OMG3Q an toàn thì nên kiểm tra gì đầu tiên?",
+        question: "Mua acc OMG3Q an toàn thì nên kiểm tra gì đầu tiên?",
         answer:
           "Hãy kiểm tra ảnh thật, server, quốc gia, cấp VIP, mô tả đội hình và quy trình bàn giao trước khi chuyển khoản.",
       },
@@ -72,36 +72,36 @@ export const blogPosts: BlogPost[] = [
     ],
     relatedLinks: [
       {
-        label: "Xem toàn bộ nick OMG3Q đang bán",
+        label: "Xem toàn bộ acc OMG3Q đang bán",
         href: "/accounts",
         description:
-          "Mở listing để so sánh nhiều acc cùng lúc theo server, giá và đội hình.",
+          "Mở danh sách acc để so sánh nhiều acc cùng lúc theo server, giá và đội hình.",
       },
       {
-        label: "Tham khảo bảng giá nick OMG3Q",
+        label: "Tham khảo bảng giá acc OMG3Q",
         href: "/bang-gia-nick-omg3q",
         description:
           "Dùng bảng giá để ước lượng ngân sách trước khi chốt tài khoản cụ thể.",
       },
       {
-        label: "Checklist đổi thông tin sau khi mua nick",
+        label: "Checklist đổi thông tin sau khi mua acc",
         href: "/blog/checklist-doi-thong-tin-sau-khi-mua-nick-omg3q",
         description:
           "Đọc tiếp quy trình giữ acc an toàn sau khi giao dịch hoàn tất.",
       },
     ],
     ctaHref: "/accounts",
-    ctaLabel: "Xem nick đang bán",
+    ctaLabel: "Xem acc đang bán",
   },
   {
     slug: "bang-gia-nick-omg3q-theo-vip",
-    title: "Bảng giá nick OMG3Q theo VIP, server và độ đẹp đội hình",
+    title: "Bảng giá acc OMG3Q theo VIP, server và độ đẹp đội hình",
     description:
-      "Cách đọc bảng giá nick OMG3Q theo VIP, server, quốc gia và độ hiếm đội hình để chốt ngân sách nhanh hơn, không bị mua hớ.",
+      "Cách đọc bảng giá acc OMG3Q theo VIP, server, quốc gia và độ hiếm đội hình để chốt ngân sách nhanh hơn, không bị mua hớ.",
     category: "Bảng giá",
     readTime: "5 phút đọc",
     intro:
-      "Giá nick OMG3Q không chỉ phụ thuộc vào VIP. Cùng một mức VIP nhưng khác server, khác quốc gia hoặc khác độ hoàn thiện đội hình thì giá có thể chênh rất mạnh. Vì vậy bảng giá chỉ nên dùng làm mốc tham khảo, sau đó mới đi sâu vào từng listing.",
+      "Giá acc OMG3Q không chỉ phụ thuộc vào VIP. Cùng một mức VIP nhưng khác server, khác quốc gia hoặc khác độ hoàn thiện đội hình thì giá có thể chênh rất mạnh. Vì vậy bảng giá chỉ nên dùng làm mốc tham khảo, sau đó mới đi sâu vào từng tài khoản cụ thể.",
     keywords: [
       "bảng giá nick omg3q",
       "giá nick omg3q vip 10",
@@ -133,10 +133,10 @@ export const blogPosts: BlogPost[] = [
         ],
       },
       {
-        heading: "Hãy dùng bảng giá để lọc, rồi quay lại listing để chốt",
+        heading: "Hãy dùng bảng giá để lọc, rồi quay lại danh sách acc để chốt",
         paragraphs: [
-          "Trang bảng giá giúp bạn biết nên bắt đầu ở tầm ngân sách nào. Nhưng quyết định cuối cùng vẫn phải dựa trên ảnh thật, highlight và mô tả chi tiết tại trang listing hoặc trang chi tiết account.",
-          "Nếu đang cân nhắc giữa nhiều mức giá, hãy mở song song bảng giá, listing và 2-3 acc nổi bật để đối chiếu. Đây là cách nhanh nhất để tránh mua theo cảm xúc.",
+          "Trang bảng giá giúp bạn biết nên bắt đầu ở tầm ngân sách nào. Nhưng quyết định cuối cùng vẫn phải dựa trên ảnh thật, highlight và mô tả chi tiết tại trang danh sách acc hoặc trang chi tiết tài khoản.",
+          "Nếu đang cân nhắc giữa nhiều mức giá, hãy mở song song bảng giá, danh sách acc và 2-3 acc nổi bật để đối chiếu. Đây là cách nhanh nhất để tránh mua theo cảm xúc.",
         ],
       },
     ],
@@ -149,23 +149,23 @@ export const blogPosts: BlogPost[] = [
       {
         question: "Có nên dùng bảng giá để chốt luôn không?",
         answer:
-          "Không. Bảng giá chỉ là mốc tham khảo. Bạn vẫn nên xem listing và ảnh thật trước khi quyết định.",
+          "Không. Bảng giá chỉ là mốc tham khảo. Bạn vẫn nên xem danh sách acc và ảnh thật trước khi quyết định.",
       },
       {
         question: "Ngân sách ít thì nên làm gì?",
         answer:
-          "Hãy lọc listing theo khung giá trước, sau đó so sánh acc cùng tầm tiền theo server và đội hình để chọn phương án hiệu quả nhất.",
+          "Hãy lọc danh sách acc theo khung giá trước, sau đó so sánh acc cùng tầm tiền theo server và đội hình để chọn phương án hiệu quả nhất.",
       },
     ],
     relatedLinks: [
       {
-        label: "Lọc nick OMG3Q theo tầm giá",
+        label: "Lọc acc OMG3Q theo tầm giá",
         href: "/accounts",
         description:
-          "Mở listing để xem ngay những acc phù hợp ngân sách bạn đang nhắm tới.",
+          "Mở danh sách acc để xem ngay những acc phù hợp ngân sách bạn đang nhắm tới.",
       },
       {
-        label: "Mẹo mua nick OMG3Q an toàn",
+        label: "Mẹo mua acc OMG3Q an toàn",
         href: "/blog/cach-mua-nick-omg3q-an-toan",
         description:
           "Đọc checklist an toàn trước khi chốt giao dịch đầu tiên.",
@@ -182,9 +182,9 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: "huong-dan-chon-nick-omg3q-cho-tan-thu",
-    title: "Hướng dẫn chọn nick OMG3Q cho tân thủ: mua gì để vào game không ngợp",
+    title: "Hướng dẫn chọn acc OMG3Q cho tân thủ: mua gì để vào game không ngợp",
     description:
-      "Gợi ý cách chọn nick OMG3Q cho người mới: nên ưu tiên quốc gia, server, đội hình và tài nguyên nào để vào game mượt hơn.",
+      "Gợi ý cách chọn acc OMG3Q cho người mới: nên ưu tiên quốc gia, server, đội hình và tài nguyên nào để vào game mượt hơn.",
     category: "Cẩm nang tân thủ",
     readTime: "7 phút đọc",
     intro:
@@ -223,13 +223,13 @@ export const blogPosts: BlogPost[] = [
         heading: "Giữ ngân sách ở mức đủ chơi, sau đó nâng dần",
         paragraphs: [
           "Với tân thủ, acc tầm giá vừa phải nhưng nền ổn thường là lựa chọn khôn ngoan hơn acc quá đắt. Bạn có thể vào game nhanh, hiểu rõ hệ thống trước rồi mới cân nhắc nâng cấp sau.",
-          "Nếu không chắc nên bắt đầu từ đâu, hãy dùng trang bảng giá để khoanh tầm tiền trước, sau đó quay lại listing để so sánh 3-5 acc cùng phân khúc.",
+          "Nếu không chắc nên bắt đầu từ đâu, hãy dùng trang bảng giá để khoanh tầm tiền trước, sau đó quay lại danh sách acc để so sánh 3-5 acc cùng phân khúc.",
         ],
       },
     ],
     faq: [
       {
-        question: "Tân thủ nên mua nick OMG3Q khoảng bao nhiêu tiền?",
+        question: "Tân thủ nên mua acc OMG3Q khoảng bao nhiêu tiền?",
         answer:
           "Nên bắt đầu ở tầm giá vừa phải, đủ để có nền đội hình và tài nguyên ổn thay vì cố mua acc quá đắt ngay từ đầu.",
       },
@@ -246,7 +246,7 @@ export const blogPosts: BlogPost[] = [
     ],
     relatedLinks: [
       {
-        label: "Xem listing nick OMG3Q cho người mới",
+        label: "Xem danh sách acc OMG3Q cho người mới",
         href: "/accounts?price_max=3000000",
         description:
           "Lọc nhanh nhóm acc dễ tiếp cận hơn để bắt đầu so sánh.",
@@ -258,20 +258,20 @@ export const blogPosts: BlogPost[] = [
           "Khoanh trước ngân sách rồi mới quay lại chốt account cụ thể.",
       },
       {
-        label: "Cách chọn server và quốc gia khi mua nick",
+        label: "Cách chọn server và quốc gia khi mua acc",
         href: "/blog/kinh-nghiem-chon-server-va-quoc-gia-khi-mua-nick-omg3q",
         description:
           "Đọc tiếp để tránh mua acc lệch đúng gu chơi của bạn.",
       },
     ],
     ctaHref: "/accounts",
-    ctaLabel: "Lọc nick dành cho tân thủ",
+    ctaLabel: "Lọc acc dành cho tân thủ",
   },
   {
     slug: "kinh-nghiem-chon-server-va-quoc-gia-khi-mua-nick-omg3q",
-    title: "Kinh nghiệm chọn server và quốc gia khi mua nick OMG3Q",
+    title: "Kinh nghiệm chọn server và quốc gia khi mua acc OMG3Q",
     description:
-      "Cách chọn server và quốc gia khi mua nick OMG3Q để hợp gu chơi, dễ vào game và tránh mua nhầm acc chỉ đẹp trên giấy.",
+      "Cách chọn server và quốc gia khi mua acc OMG3Q để hợp gu chơi, dễ vào game và tránh mua nhầm acc chỉ đẹp trên giấy.",
     category: "Chọn acc đúng nhu cầu",
     readTime: "6 phút đọc",
     intro:
@@ -309,14 +309,14 @@ export const blogPosts: BlogPost[] = [
       {
         heading: "Cách lọc nhanh khi chưa biết nên bắt đầu từ đâu",
         paragraphs: [
-          "Hãy mở danh sách nick OMG3Q, chọn trước tầm giá, sau đó lọc theo server hoặc quốc gia bạn đang cân nhắc. Việc thu hẹp tập lựa chọn trước sẽ giúp bạn ra quyết định sáng hơn rất nhiều.",
+          "Hãy mở danh sách acc OMG3Q, chọn trước tầm giá, sau đó lọc theo server hoặc quốc gia bạn đang cân nhắc. Việc thu hẹp tập lựa chọn trước sẽ giúp bạn ra quyết định sáng hơn rất nhiều.",
           "Sau khi chọn được vài ứng viên, hãy mở chi tiết từng acc để xem ảnh thật và highlights. Đó là bước quyết định cuối cùng trước khi liên hệ chốt.",
         ],
       },
     ],
     faq: [
       {
-        question: "Nên chọn server hay quốc gia trước khi mua nick OMG3Q?",
+        question: "Nên chọn server hay quốc gia trước khi mua acc OMG3Q?",
         answer:
           "Nếu bạn đã có gu chơi hoặc thích một kiểu đội hình nhất định, hãy chọn quốc gia trước. Nếu bạn quan tâm thanh khoản và cộng đồng, hãy xem server trước.",
       },
@@ -333,32 +333,32 @@ export const blogPosts: BlogPost[] = [
     ],
     relatedLinks: [
       {
-        label: "Lọc nick OMG3Q theo server",
+        label: "Lọc acc OMG3Q theo server",
         href: "/accounts",
         description:
           "Dùng bộ lọc để thu hẹp danh sách theo server bạn đang quan tâm.",
       },
       {
-        label: "Hướng dẫn chọn nick cho tân thủ",
+        label: "Hướng dẫn chọn acc cho tân thủ",
         href: "/blog/huong-dan-chon-nick-omg3q-cho-tan-thu",
         description:
           "Nếu mới chơi, hãy đọc bài này trước để xác định acc nào dễ vào game hơn.",
       },
       {
-        label: "Xem bảng giá nick OMG3Q",
+        label: "Xem bảng giá acc OMG3Q",
         href: "/bang-gia-nick-omg3q",
         description:
           "Ước lượng ngân sách trước rồi mới quay lại chốt server và quốc gia.",
       },
     ],
     ctaHref: "/accounts",
-    ctaLabel: "Lọc nick theo server ngay",
+    ctaLabel: "Lọc acc theo server ngay",
   },
   {
     slug: "checklist-doi-thong-tin-sau-khi-mua-nick-omg3q",
-    title: "Checklist đổi thông tin sau khi mua nick OMG3Q để giữ acc an toàn",
+    title: "Checklist đổi thông tin sau khi mua acc OMG3Q để giữ acc an toàn",
     description:
-      "Các bước nên làm ngay sau khi nhận nick OMG3Q: đổi thông tin, kiểm tra liên kết và lưu lại mốc bàn giao để giữ acc an toàn hơn.",
+      "Các bước nên làm ngay sau khi nhận acc OMG3Q: đổi thông tin, kiểm tra liên kết và lưu lại mốc bàn giao để giữ acc an toàn hơn.",
     category: "Sau giao dịch",
     readTime: "5 phút đọc",
     intro:
@@ -402,7 +402,7 @@ export const blogPosts: BlogPost[] = [
     ],
     faq: [
       {
-        question: "Sau khi mua nick OMG3Q cần làm gì đầu tiên?",
+        question: "Sau khi mua acc OMG3Q cần làm gì đầu tiên?",
         answer:
           "Việc đầu tiên là đổi các thông tin quan trọng theo đúng hướng dẫn bàn giao để đưa quyền kiểm soát tài khoản về phía bạn.",
       },
@@ -419,16 +419,16 @@ export const blogPosts: BlogPost[] = [
     ],
     relatedLinks: [
       {
-        label: "Checklist mua nick OMG3Q an toàn",
+        label: "Checklist mua acc OMG3Q an toàn",
         href: "/blog/cach-mua-nick-omg3q-an-toan",
         description:
           "Nếu chưa chốt acc, quay lại bài này để đi đúng quy trình an toàn ngay từ đầu.",
       },
       {
-        label: "Xem chi tiết các nick đang bán",
+        label: "Xem chi tiết các acc đang bán",
         href: "/accounts",
         description:
-          "Mở listing để kiểm tra ảnh thật và mô tả rõ ràng trước khi giao dịch.",
+          "Mở danh sách acc để kiểm tra ảnh thật và mô tả rõ ràng trước khi giao dịch.",
       },
       {
         label: "Tham khảo bảng giá trước khi mua tiếp",

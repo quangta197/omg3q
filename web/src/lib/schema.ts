@@ -1,4 +1,10 @@
-import { absoluteUrl, siteConfig } from "@/lib/seo";
+import {
+  absoluteUrl,
+  DEFAULT_SOCIAL_IMAGE_PATH,
+  ORGANIZATION_LOGO_PATH,
+  siteConfig,
+  toAbsoluteMediaUrl,
+} from "@/lib/seo";
 import type { AccountDetail, AccountSummary } from "@/lib/types";
 
 type JsonLdRecord = Record<string, unknown>;
@@ -9,7 +15,8 @@ export function buildOrganizationSchema(): JsonLdRecord {
     "@type": "Organization",
     name: siteConfig.name,
     url: absoluteUrl("/"),
-    logo: absoluteUrl("/og-image.png"),
+    logo: absoluteUrl(ORGANIZATION_LOGO_PATH),
+    image: absoluteUrl(DEFAULT_SOCIAL_IMAGE_PATH),
     sameAs: [
       process.env.NEXT_PUBLIC_ZALO_LINK,
       process.env.NEXT_PUBLIC_FB_PAGE,
@@ -23,6 +30,7 @@ export function buildWebsiteSchema(): JsonLdRecord {
     "@type": "WebSite",
     name: siteConfig.name,
     url: absoluteUrl("/"),
+    image: absoluteUrl(DEFAULT_SOCIAL_IMAGE_PATH),
     potentialAction: {
       "@type": "SearchAction",
       target: `${absoluteUrl("/accounts")}?search={search_term_string}`,
@@ -61,11 +69,43 @@ export function buildItemListSchema(
       position: index + 1,
       url: absoluteUrl(`/accounts/${account.slug}`),
       name: account.title,
+      image: account.thumbnailUrl
+        ? toAbsoluteMediaUrl(account.thumbnailUrl)
+        : undefined,
     })),
   };
 }
 
+export function buildWebPageSchema({
+  name,
+  description,
+  path,
+  image = DEFAULT_SOCIAL_IMAGE_PATH,
+}: {
+  name: string;
+  description?: string;
+  path: string;
+  image?: string;
+}): JsonLdRecord {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name,
+    description,
+    url: absoluteUrl(path),
+    primaryImageOfPage: toAbsoluteMediaUrl(image),
+  };
+}
+
 export function buildProductSchema(account: AccountDetail): JsonLdRecord {
+  const imageUrls = Array.from(
+    new Set(
+      [account.thumbnailUrl, ...account.images.map((image) => image.imageUrl)]
+        .filter((value): value is string => Boolean(value))
+        .map((value) => toAbsoluteMediaUrl(value))
+    )
+  );
+
   return {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -73,6 +113,7 @@ export function buildProductSchema(account: AccountDetail): JsonLdRecord {
     description: account.description,
     url: absoluteUrl(`/accounts/${account.slug}`),
     category: "Game Account",
+    image: imageUrls.length ? imageUrls : undefined,
     offers: {
       "@type": "Offer",
       priceCurrency: "VND",

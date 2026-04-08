@@ -219,24 +219,25 @@ export async function generateMetadata({
   const filters = normalizeFilters(await searchParams);
   const hasCustomState = !isDefaultListing(filters);
   const title = filters.search
-    ? `Kết quả mua nick OMG3Q cho "${filters.search}" | Shop acc OMG3Q`
+    ? `Kết quả mua acc OMG3Q cho "${filters.search}" | Shop acc OMG3Q`
     : hasCustomState
-      ? "Lọc nick OMG3Q theo server, giá và quốc gia | ShopOMG3Q"
-      : "Mua Nick OMG3Q | Shop Acc OMG3Q Theo Server, VIP, Giá";
+      ? "Lọc acc OMG3Q theo server, giá và quốc gia | ShopOMG3Q"
+      : "Mua Acc OMG3Q | Shop Acc OMG3Q Theo Server, VIP, Giá";
   const description = hasCustomState
-    ? "Kết quả lọc nick OMG3Q theo server, quốc gia và giá để bạn chọn nhanh acc phù hợp trước khi chốt."
-    : "Danh sách nick OMG3Q đang bán theo server, quốc gia, VIP và mức giá. Có ảnh thật, mô tả rõ, hỗ trợ giữ acc và tư vấn chốt nhanh.";
+    ? "Kết quả lọc acc OMG3Q theo server, quốc gia và giá để bạn chọn nhanh acc phù hợp trước khi chốt."
+    : "Danh sách acc OMG3Q đang bán theo server, quốc gia, VIP và mức giá. Có ảnh thật, mô tả rõ, hỗ trợ giữ acc và tư vấn chốt nhanh.";
 
   return createMetadata({
     title,
     description,
     path: "/accounts",
     keywords: [
+      "mua acc omg3q",
+      "danh sách acc omg3q",
+      "mua acc omg3q theo server",
+      "lọc acc omg3q",
       "mua nick omg3q",
       "shop acc omg3q",
-      "danh sách nick omg3q",
-      "mua nick omg3q theo server",
-      "lọc nick omg3q",
     ],
     noIndex: hasCustomState,
   });
@@ -309,7 +310,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
         data={[
           buildBreadcrumbSchema([
             { name: "Trang chủ", path: "/" },
-            { name: "Danh sách nick", path: "/accounts" },
+            { name: "Danh sách acc", path: "/accounts" },
           ]),
           buildItemListSchema(listingPath, result.items),
         ]}
@@ -319,12 +320,11 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
         <div>
           <span className={styles.resultsEyebrow}>Shop acc OMG3Q</span>
           <h1 className={styles.pageTitle}>
-            Mua nick OMG3Q theo server, quốc gia và tầm giá phù hợp
+            Mua acc OMG3Q theo server, quốc gia và tầm giá phù hợp
           </h1>
           <p className={styles.pageDescription}>
-            Trang danh sách này tập trung đúng intent tìm kiếm “mua nick OMG3Q” và
-            “shop acc OMG3Q”, giúp bạn lọc nhanh theo server, giá, quốc gia rồi đi
-            thẳng vào từng trang chi tiết account để chốt.
+            Mở danh sách để lọc nhanh theo server, giá, quốc gia và tìm đúng acc
+            phù hợp với nhu cầu của bạn.
           </p>
         </div>
 
@@ -336,7 +336,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
             href="/blog/cach-mua-nick-omg3q-an-toan"
             className={styles.pageLinkSecondary}
           >
-            Cách mua nick an toàn
+            Cách mua acc an toàn
           </Link>
         </div>
       </header>
@@ -346,7 +346,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
           <div className={styles.panelHeader}>
             <div>
               <span className={styles.panelEyebrow}>Bộ lọc chính</span>
-              <h2 className={styles.panelTitle}>Khoanh vùng đúng nick cần tìm</h2>
+              <h2 className={styles.panelTitle}>Khoanh vùng đúng acc cần tìm</h2>
               <p className={styles.panelDescription}>
                 Điền từ khóa, chọn server hoặc đặt khung giá để rút ngắn thời gian
                 duyệt acc.
@@ -370,7 +370,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
                 type="search"
                 className={styles.input}
                 defaultValue={result.appliedFilters.search ?? ""}
-                placeholder="Tên nick, mô tả hoặc nhu cầu cụ thể"
+                placeholder="Tên acc, mô tả hoặc nhu cầu cụ thể"
               />
             </div>
 
@@ -477,8 +477,8 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
             <h2 className={styles.resultsTitle}>Tài khoản đang rao bán</h2>
             <p className={styles.resultsText}>
               {result.total > 0
-                ? `Hiển thị ${startItem}-${endItem} / ${result.total} nick phù hợp.`
-                : "Chưa có nick phù hợp với bộ lọc hiện tại."}
+                ? `Hiển thị ${startItem}-${endItem} / ${result.total} acc phù hợp.`
+                : "Chưa có acc phù hợp với bộ lọc hiện tại."}
             </p>
           </div>
           <div className={styles.resultsMeta}>
@@ -499,11 +499,11 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
 
         <AccountGrid
           items={result.items}
-          emptyMessage="Không tìm thấy nick phù hợp. Hãy thử nới giá hoặc đổi server và quốc gia."
+          emptyMessage="Không tìm thấy acc phù hợp. Hãy thử nới giá hoặc đổi server và quốc gia."
         />
 
         {result.totalPages > 1 ? (
-          <nav className={styles.pagination} aria-label="Phân trang danh sách nick">
+          <nav className={styles.pagination} aria-label="Phân trang danh sách acc">
             <Link
               href={buildAccountsPath({
                 ...result.appliedFilters,
@@ -550,8 +550,6 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
             </Link>
           </nav>
         ) : null}
-
-      
       </section>
     </main>
   );

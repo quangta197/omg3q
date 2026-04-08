@@ -322,7 +322,7 @@ export async function PATCH(request: NextRequest, { params }: RouteProps) {
         message:
           imageError instanceof Error
             ? imageError.message
-            : "Cập nhật nick thành công nhưng upload ảnh thất bại.",
+            : "Cập nhật acc thành công nhưng upload ảnh thất bại.",
       },
       { status: 500 }
     );
