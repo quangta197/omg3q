@@ -132,6 +132,30 @@ function normalizeSort(sort?: AccountSort) {
   return sort ?? "newest";
 }
 
+async function getActiveRelationIds(column: "server_id" | "nation_id") {
+  if (!isSupabaseConfigured()) {
+    return [];
+  }
+
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("accounts")
+    .select(column)
+    .in("status", ["available", "reserved"]);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return Array.from(
+    new Set(
+      ((data ?? []) as Array<Record<typeof column, string | null>>)
+        .map((item) => item[column])
+        .filter((value): value is string => Boolean(value))
+    )
+  );
+}
+
 export const getAccounts = cache(async (): Promise<AccountSummary[]> => {
   if (!isSupabaseConfigured()) {
     return [];
@@ -402,13 +426,27 @@ export const getNations = cache(async (): Promise<NationOption[]> => {
 });
 
 export const getServerCodes = cache(async (): Promise<string[]> => {
-  const servers = await getServers();
-  return servers.map((item) => item.code);
+  const [servers, activeServerIds] = await Promise.all([
+    getServers(),
+    getActiveRelationIds("server_id"),
+  ]);
+  const activeServerIdSet = new Set(activeServerIds);
+
+  return servers
+    .filter((item) => activeServerIdSet.has(item.id))
+    .map((item) => item.code);
 });
 
 export const getNationCodes = cache(async (): Promise<string[]> => {
-  const nations = await getNations();
-  return nations.map((item) => item.code);
+  const [nations, activeNationIds] = await Promise.all([
+    getNations(),
+    getActiveRelationIds("nation_id"),
+  ]);
+  const activeNationIdSet = new Set(activeNationIds);
+
+  return nations
+    .filter((item) => activeNationIdSet.has(item.id))
+    .map((item) => item.code);
 });
 
 export const getAccountSlugs = cache(async (): Promise<string[]> => {

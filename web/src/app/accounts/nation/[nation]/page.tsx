@@ -11,9 +11,9 @@ import type { NationCode } from "@/lib/types";
 export const revalidate = 300;
 
 const nationLabels: Record<NationCode, string> = {
-  nguy: "Nguy",
-  thuc: "Thuc",
-  ngo: "Ngo",
+  nguy: "Ngụy",
+  thuc: "Thục",
+  ngo: "Ngô",
 };
 
 type NationLandingPageProps = {
@@ -31,18 +31,21 @@ export async function generateMetadata({ params }: NationLandingPageProps) {
 
   if (!nationName) {
     return createMetadata({
-      title: "Nhom quoc gia khong ton tai",
-      description: "Landing page khong hop le.",
+      title: "Nhóm quốc gia không tồn tại",
+      description: "Landing page không hợp lệ.",
       path: `/accounts/nation/${nation}`,
       noIndex: true,
     });
   }
 
   return createMetadata({
-    title: `Nick OMG3Q quoc gia ${nationName}`,
-    description: `Tong hop nick OMG3Q quoc gia ${nationName} de xem nhanh doi hinh, VIP va gia ban phu hop.`,
+    title: `Nick OMG3Q quốc gia ${nationName}`,
+    description: `Tổng hợp nick OMG3Q quốc gia ${nationName} để xem nhanh đội hình, VIP và giá bán phù hợp.`,
     path: `/accounts/nation/${nation}`,
-    keywords: [`nick omg3q ${nationName.toLowerCase()}`, `mua nick omg3q ${nationName.toLowerCase()}`],
+    keywords: [
+      `nick omg3q ${nationName.toLowerCase()}`,
+      `mua nick omg3q ${nationName.toLowerCase()}`,
+    ],
   });
 }
 
@@ -87,8 +90,8 @@ export default async function NationLandingPage({
       <JsonLd
         data={[
           buildBreadcrumbSchema([
-            { name: "Trang chu", path: "/" },
-            { name: "Danh sach nick", path: "/accounts" },
+            { name: "Trang chủ", path: "/" },
+            { name: "Danh sách nick", path: "/accounts" },
             { name: nationName, path: `/accounts/nation/${nation}` },
           ]),
           buildItemListSchema(`/accounts/nation/${nation}`, items),

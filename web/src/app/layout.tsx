@@ -4,7 +4,12 @@ import { FloatingContact } from "@/components/chrome/FloatingContact";
 import { SiteFooter } from "@/components/chrome/SiteFooter";
 import { SiteHeader } from "@/components/chrome/SiteHeader";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { createMetadata, getSiteUrl, siteConfig } from "@/lib/seo";
+import {
+  createMetadata,
+  getGoogleVerification,
+  getSiteUrl,
+  siteConfig,
+} from "@/lib/seo";
 import { buildOrganizationSchema, buildWebsiteSchema } from "@/lib/schema";
 import "./globals.css";
 
@@ -29,7 +34,7 @@ export const metadata: Metadata = {
   }),
   metadataBase: new URL(getSiteUrl()),
   verification: {
-    google: process.env.NEXT_PUBLIC_GSC_VERIFICATION,
+    google: getGoogleVerification(),
   },
 };
 

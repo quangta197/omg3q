@@ -21,8 +21,8 @@ export async function generateMetadata({ params }: ServerLandingPageProps) {
   const { server } = await params;
 
   return createMetadata({
-    title: `Nick OMG3Q ${server.toUpperCase()} uy tin, gia tot`,
-    description: `Tong hop nick OMG3Q server ${server.toUpperCase()} voi nhieu muc VIP va gia ban de chon nhanh tai khoan phu hop.`,
+    title: `Nick OMG3Q ${server.toUpperCase()} uy tín, giá tốt`,
+    description: `Tổng hợp nick OMG3Q server ${server.toUpperCase()} với nhiều mức VIP và giá bán để chọn nhanh tài khoản phù hợp.`,
     path: `/accounts/server/${server}`,
     keywords: [`nick omg3q ${server}`, `mua nick omg3q ${server}`],
   });
@@ -63,9 +63,12 @@ export default async function ServerLandingPage({
       <JsonLd
         data={[
           buildBreadcrumbSchema([
-            { name: "Trang chu", path: "/" },
-            { name: "Danh sach nick", path: "/accounts" },
-            { name: `Server ${server.toUpperCase()}`, path: `/accounts/server/${server}` },
+            { name: "Trang chủ", path: "/" },
+            { name: "Danh sách nick", path: "/accounts" },
+            {
+              name: `Server ${server.toUpperCase()}`,
+              path: `/accounts/server/${server}`,
+            },
           ]),
           buildItemListSchema(`/accounts/server/${server}`, items),
         ]}
