@@ -85,3 +85,24 @@ export function buildProductSchema(account: AccountDetail): JsonLdRecord {
     },
   };
 }
+
+export function buildFaqSchema(
+  items: Array<{ question: string; answer: string }>
+): JsonLdRecord | null {
+  if (!items.length) {
+    return null;
+  }
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
+      },
+    })),
+  };
+}

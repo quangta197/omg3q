@@ -1,46 +1,15 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AccountGrid } from "@/components/marketing/AccountGrid";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { getFeaturedAccounts } from "@/lib/accounts";
 import { blogPosts, getBlogPostBySlug } from "@/lib/blog-data";
 import { createMetadata } from "@/lib/seo";
-import { buildBreadcrumbSchema } from "@/lib/schema";
+import { buildBreadcrumbSchema, buildFaqSchema } from "@/lib/schema";
+import styles from "./page.module.css";
 
-const blogShellContent = {
-  "cach-mua-nick-omg3q-an-toan": {
-    metrics: [
-      { label: "Phù hợp", value: "Người mua lần đầu" },
-      { label: "Mục tiêu", value: "Tránh mất acc" },
-      { label: "Hành động", value: "Kiểm tra đủ trước khi chốt" },
-    ],
-    sectionTitle: "Checklist cần xem trước khi giao dịch",
-    sectionText:
-      "Trước khi thanh toán, hãy kiểm tra ảnh, thông tin liên kết, server, quốc gia và chính sách hỗ trợ để tránh mua nhầm hoặc nhận acc không đúng mô tả.",
-    bullets: [
-      "Yêu cầu xem đủ ảnh tài khoản, đội hình và vật phẩm quan trọng.",
-      "Kiểm tra rõ server, quốc gia, VIP và các thông tin liên kết.",
-      "Chỉ chốt khi đã thống nhất cách bàn giao và hỗ trợ sau giao dịch.",
-    ],
-    ctaHref: "/accounts",
-    ctaLabel: "Xem nick đang bán",
-  },
-  "bang-gia-nick-omg3q-theo-vip": {
-    metrics: [
-      { label: "Phù hợp", value: "Người cần chốt ngân sách" },
-      { label: "Tập trung", value: "VIP + đội hình" },
-      { label: "Gợi ý", value: "So sánh trước khi mua" },
-    ],
-    sectionTitle: "Cách nhìn khung giá cho đúng",
-    sectionText:
-      "Giá nick thường thay đổi theo VIP, độ hiếm đội hình và tình trạng server. Hãy dùng bảng giá như mốc tham khảo trước khi xem từng nick cụ thể.",
-    bullets: [
-      "VIP càng cao thì giá thường tăng rõ.",
-      "Đội hình hiếm, tướng đẹp và tài nguyên dày sẽ kéo giá lên thêm.",
-      "Nên so sánh nhiều nick cùng tầm tiền trước khi quyết định.",
-    ],
-    ctaHref: "/bang-gia-nick-omg3q",
-    ctaLabel: "Xem bảng giá tham khảo",
-  },
-} as const;
+export const revalidate = 300;
 
 type BlogDetailPageProps = {
   params: Promise<{ slug: string }>;
@@ -56,18 +25,18 @@ export async function generateMetadata({ params }: BlogDetailPageProps) {
 
   if (!post) {
     return createMetadata({
-      title: "Bai viet khong ton tai",
-      description: "Noi dung khong hop le.",
+      title: "Bài viết không tồn tại",
+      description: "Nội dung không hợp lệ hoặc đã được gỡ khỏi website.",
       path: `/blog/${slug}`,
       noIndex: true,
     });
   }
 
   return createMetadata({
-    title: post.title,
+    title: `${post.title} | Blog OMG3Q`,
     description: post.description,
     path: `/blog/${slug}`,
-    keywords: ["blog omg3q", post.category.toLowerCase(), post.slug.replaceAll("-", " ")],
+    keywords: post.keywords,
   });
 }
 
@@ -79,30 +48,118 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
     notFound();
   }
 
-  const shellContent =
-    blogShellContent[post.slug as keyof typeof blogShellContent] ??
-    blogShellContent["cach-mua-nick-omg3q-an-toan"];
+  const featuredAccounts = await getFeaturedAccounts(3);
+  const summaryBullets =
+    post.sections.find((section) => section.bullets?.length)?.bullets ??
+    post.sections.map((section) => section.heading).slice(0, 3);
+  const jsonLdData = [
+    buildBreadcrumbSchema([
+      { name: "Trang chủ", path: "/" },
+      { name: "Blog OMG3Q", path: "/blog" },
+      { name: post.title, path: `/blog/${post.slug}` },
+    ]),
+    buildFaqSchema(post.faq),
+  ].filter((item): item is Record<string, unknown> => Boolean(item));
 
   return (
     <>
-      <JsonLd
-        data={buildBreadcrumbSchema([
-          { name: "Trang chu", path: "/" },
-          { name: "Blog OMG3Q", path: "/blog" },
-          { name: post.title, path: `/blog/${post.slug}` },
-        ])}
-      />
+      <JsonLd data={jsonLdData} />
+
       <MarketingShell
         eyebrow={post.category}
         title={post.title}
         description={post.description}
-        metrics={shellContent.metrics}
-        sectionTitle={shellContent.sectionTitle}
-        sectionText={shellContent.sectionText}
-        bullets={shellContent.bullets}
-        ctaHref={shellContent.ctaHref}
-        ctaLabel={shellContent.ctaLabel}
+        metrics={post.metrics}
+        sectionTitle="Tóm tắt nhanh trước khi đọc sâu"
+        sectionText={post.intro}
+        bullets={summaryBullets}
+        ctaHref={post.ctaHref}
+        ctaLabel={post.ctaLabel}
       />
+
+      <main className={styles.stack}>
+        <section className={styles.panel}>
+          <div className={styles.panelHead}>
+            <div>
+              <span className={styles.eyebrow}>Nội dung chính</span>
+              <h2 className={styles.title}>Đi thẳng vào các điểm ảnh hưởng tới quyết định mua acc</h2>
+            </div>
+            <span className={styles.readingTime}>{post.readTime}</span>
+          </div>
+
+          <div className={styles.articleBody}>
+            {post.sections.map((section) => (
+              <article key={section.heading} className={styles.articleSection}>
+                <h3 className={styles.sectionTitle}>{section.heading}</h3>
+                {section.paragraphs.map((paragraph) => (
+                  <p key={paragraph} className={styles.paragraph}>
+                    {paragraph}
+                  </p>
+                ))}
+                {section.bullets?.length ? (
+                  <ul className={styles.bulletList}>
+                    {section.bullets.map((bullet) => (
+                      <li key={bullet}>{bullet}</li>
+                    ))}
+                  </ul>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className={styles.panel}>
+          <div className={styles.panelHead}>
+            <div>
+              <span className={styles.eyebrow}>Internal link</span>
+              <h2 className={styles.title}>Đi tiếp sang listing, bảng giá và trang hỗ trợ đúng ngữ cảnh</h2>
+            </div>
+          </div>
+
+          <div className={styles.linkGrid}>
+            {post.relatedLinks.map((link) => (
+              <Link key={link.href} href={link.href} className={styles.linkCard}>
+                <strong>{link.label}</strong>
+                <p>{link.description}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {featuredAccounts.length ? (
+          <section className={styles.panel}>
+            <div className={styles.panelHead}>
+              <div>
+                <span className={styles.eyebrow}>Acc đang nổi bật</span>
+                <h2 className={styles.title}>Từ bài viết đi thẳng sang account detail thật</h2>
+              </div>
+              <Link href="/accounts" className={styles.primaryLink}>
+                Xem toàn bộ nick OMG3Q
+              </Link>
+            </div>
+
+            <AccountGrid items={featuredAccounts} />
+          </section>
+        ) : null}
+
+        <section className={styles.panel}>
+          <div className={styles.panelHead}>
+            <div>
+              <span className={styles.eyebrow}>FAQ</span>
+              <h2 className={styles.title}>Câu hỏi thường gặp quanh chủ đề này</h2>
+            </div>
+          </div>
+
+          <div className={styles.faqGrid}>
+            {post.faq.map((item) => (
+              <article key={item.question} className={styles.faqCard}>
+                <h3 className={styles.question}>{item.question}</h3>
+                <p className={styles.answer}>{item.answer}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      </main>
     </>
   );
 }

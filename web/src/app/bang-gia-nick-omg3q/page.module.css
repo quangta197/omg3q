@@ -1,0 +1,138 @@
+.stack {
+  display: grid;
+  gap: 22px;
+  width: min(calc(100% - 32px), var(--container-width));
+  margin: 24px auto 0;
+  padding-bottom: 28px;
+}
+
+.panel {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: 26px;
+  background: var(--color-surface-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.panelHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: end;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin-top: 10px;
+  color: var(--color-text);
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(1.45rem, 2.5vw, 2rem);
+  line-height: 1.08;
+}
+
+.primaryLink,
+.secondaryLink,
+.inlineLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-weight: 800;
+}
+
+.primaryLink,
+.inlineLink {
+  background: linear-gradient(135deg, #ff005c, #ff2b66);
+  color: white;
+}
+
+.secondaryLink {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-soft);
+}
+
+.bandGrid,
+.linkGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.bandCard,
+.linkCard {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--color-surface) 88%, white 12%);
+}
+
+.bandTitle {
+  color: var(--color-text-mute);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.bandValue {
+  color: var(--color-text);
+  font-size: 1.6rem;
+  font-weight: 900;
+  line-height: 1.08;
+}
+
+.bandDescription,
+.linkCard p {
+  color: var(--color-text-soft);
+  font-size: 0.92rem;
+  line-height: 1.68;
+}
+
+.linkCard strong {
+  color: var(--color-text);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+@media (max-width: 960px) {
+  .panelHead {
+    flex-direction: column;
+    align-items: start;
+  }
+
+  .bandGrid,
+  .linkGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .stack {
+    gap: 18px;
+  }
+
+  .panel {
+    padding: 20px;
+    border-radius: 22px;
+  }
+}

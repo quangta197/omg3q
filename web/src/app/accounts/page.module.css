@@ -4,6 +4,61 @@
   padding-bottom: 36px;
 }
 
+.pageIntro {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: end;
+}
+
+.pageTitle {
+  max-width: 14ch;
+  margin-top: 10px;
+  color: var(--color-text);
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(1.9rem, 4vw, 3.1rem);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+}
+
+.pageDescription {
+  max-width: 740px;
+  margin-top: 14px;
+  color: var(--color-text-soft);
+  font-size: 0.96rem;
+  line-height: 1.72;
+}
+
+.pageLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.pageLinkPrimary,
+.pageLinkSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 13px;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.pageLinkPrimary {
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-strong));
+  color: white;
+}
+
+.pageLinkSecondary {
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, white 18%);
+  background: color-mix(in srgb, var(--color-surface-strong) 88%, white 12%);
+  color: var(--color-text-soft);
+}
+
 .hero {
   position: relative;
   overflow: hidden;
@@ -547,6 +602,7 @@
     padding: 26px;
   }
 
+  .pageIntro,
   .quickRailHeader,
   .panelHeader,
   .panelFooter,

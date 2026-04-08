@@ -8,8 +8,13 @@ import { AccountGrid } from "@/components/marketing/AccountGrid";
 import { HomeSortControl } from "@/components/marketing/HomeSortControl";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { getFeaturedAccounts, getServers } from "@/lib/accounts";
+import { blogPosts } from "@/lib/blog-data";
 import { createMetadata, formatPrice } from "@/lib/seo";
-import { buildBreadcrumbSchema, buildItemListSchema } from "@/lib/schema";
+import {
+  buildBreadcrumbSchema,
+  buildFaqSchema,
+  buildItemListSchema,
+} from "@/lib/schema";
 import type { AccountSort, AccountSummary } from "@/lib/types";
 import styles from "./page.module.css";
 
@@ -48,6 +53,29 @@ const quickFilters = [
   { label: "500k - 2tr", href: "/accounts?price_min=500000&price_max=2000000" },
   { label: "Trên 2tr", href: "/accounts?price_min=2000000" },
   { label: "Nick tân thủ", href: "/accounts?price_max=1000000" },
+];
+
+const homeFaqs = [
+  {
+    question: "Mua nick OMG3Q ở shop thì nên xem gì trước khi chốt?",
+    answer:
+      "Bạn nên xem ảnh thật, server, quốc gia, cấp VIP, highlights và mô tả bàn giao trước khi chốt giao dịch.",
+  },
+  {
+    question: "Tôi có thể lọc nick OMG3Q theo ngân sách không?",
+    answer:
+      "Có. Bạn có thể lọc theo giá, server và từ khóa ngay trên trang danh sách nick OMG3Q để rút ngắn thời gian tìm acc phù hợp.",
+  },
+  {
+    question: "Người mới chơi OMG3Q nên mua acc như thế nào?",
+    answer:
+      "Người mới nên ưu tiên acc có nền đội hình rõ ràng, mô tả dễ hiểu và mức giá vừa phải thay vì chạy theo chỉ số quá cao.",
+  },
+  {
+    question: "Sau khi mua nick OMG3Q shop có hỗ trợ gì không?",
+    answer:
+      "Shop hỗ trợ hướng dẫn bàn giao, kiểm tra lại mô tả đã chốt và tư vấn các bước cần làm ngay sau khi nhận acc.",
+  },
 ];
 
 const HOME_BANNER_SOURCES = {
@@ -101,6 +129,12 @@ export default async function Home({ searchParams }: HomePageProps) {
   const sortedFeaturedAccounts = sortHomeAccounts(featuredAccounts, sort);
   const spotlightAccount = sortedFeaturedAccounts[0] ?? null;
   const bannerAccounts = sortedFeaturedAccounts.slice(1, 5);
+  const featuredGuides = blogPosts.slice(0, 3);
+  const jsonLdData = [
+    buildBreadcrumbSchema([{ name: "Trang chủ", path: "/" }]),
+    buildItemListSchema("/", sortedFeaturedAccounts),
+    buildFaqSchema(homeFaqs),
+  ].filter((item): item is Record<string, unknown> => Boolean(item));
 
   const serverOptions: SearchableSelectOption[] = servers.map((server) => ({
     value: server.code,
@@ -111,10 +145,7 @@ export default async function Home({ searchParams }: HomePageProps) {
   return (
     <>
       <JsonLd
-        data={[
-          buildBreadcrumbSchema([{ name: "Trang chủ", path: "/" }]),
-          buildItemListSchema("/", sortedFeaturedAccounts),
-        ]}
+        data={jsonLdData}
       />
 
       <div className={styles.page}>
@@ -249,6 +280,18 @@ export default async function Home({ searchParams }: HomePageProps) {
                 )}
               </div>
 
+              <div className={styles.heroLead}>
+                <span className={styles.eyebrow}>Shop acc OMG3Q</span>
+                <h1 className={styles.heroTitle}>
+                  Mua nick OMG3Q rõ ảnh, rõ giá, lọc nhanh theo server và VIP
+                </h1>
+                <p className={styles.heroText}>
+                  ShopOMG3Q tập trung vào listing có ảnh thật, mô tả rõ và bộ lọc
+                  theo server, quốc gia, tầm giá để bạn chọn acc nhanh hơn trước khi
+                  chốt.
+                </p>
+              </div>
+
               <form className={styles.searchPanel} action="/accounts" method="get">
                 <input
                   className={styles.searchField}
@@ -306,6 +349,81 @@ export default async function Home({ searchParams }: HomePageProps) {
                   </div>
                 </div>
               ))}
+            </div>
+          </section>
+
+          <section className={`${styles.section} ${styles.guidesSection}`}>
+            <div className={styles.guidesHead}>
+              <div>
+                <span className={styles.sectionEyebrow}>Cẩm nang nên đọc trước</span>
+                <h2 className={styles.sectionTitle}>
+                  Nội dung giúp chốt acc <span>đúng nhu cầu hơn</span>
+                </h2>
+                <p className={styles.guidesText}>
+                  Cụm bài viết này được viết để kéo đúng nhóm tìm kiếm như mua nick
+                  OMG3Q, shop acc OMG3Q và bảng giá nick OMG3Q, đồng thời dẫn người
+                  đọc quay lại listing và trang chi tiết account.
+                </p>
+              </div>
+
+              <div className={styles.guidesActions}>
+                <Link href="/blog" className={styles.guidesPrimary}>
+                  Xem toàn bộ blog
+                </Link>
+                <Link href="/bang-gia-nick-omg3q" className={styles.guidesSecondary}>
+                  Xem bảng giá
+                </Link>
+              </div>
+            </div>
+
+            <div className={styles.guidesGrid}>
+              {featuredGuides.map((post) => (
+                <article key={post.slug} className={styles.guideCard}>
+                  <div className={styles.guideMeta}>
+                    <span>{post.category}</span>
+                    <span>{post.readTime}</span>
+                  </div>
+                  <h3 className={styles.guideTitle}>{post.title}</h3>
+                  <p className={styles.guideDescription}>{post.description}</p>
+                  <Link href={`/blog/${post.slug}`} className={styles.guideLink}>
+                    Đọc bài viết
+                  </Link>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className={`${styles.section} ${styles.faqSection}`}>
+            <div className={styles.faqHead}>
+              <span className={styles.sectionEyebrow}>Hỏi đáp nhanh</span>
+              <h2 className={styles.sectionTitle}>
+                FAQ khi tìm và mua <span>nick OMG3Q</span>
+              </h2>
+              <p className={styles.guidesText}>
+                Phần này vừa trả lời nhanh các câu hỏi phổ biến, vừa giúp Google hiểu
+                rõ nội dung chính của trang chủ và cụm landing bán nick OMG3Q.
+              </p>
+            </div>
+
+            <div className={styles.faqGrid}>
+              {homeFaqs.map((item) => (
+                <article key={item.question} className={styles.faqCard}>
+                  <h3 className={styles.faqQuestion}>{item.question}</h3>
+                  <p className={styles.faqAnswer}>{item.answer}</p>
+                </article>
+              ))}
+            </div>
+
+            <div className={styles.faqLinks}>
+              <Link href="/accounts" className={styles.faqLink}>
+                Mở danh sách nick OMG3Q
+              </Link>
+              <Link href="/blog/cach-mua-nick-omg3q-an-toan" className={styles.faqLink}>
+                Xem checklist mua acc an toàn
+              </Link>
+              <Link href="/bang-gia-nick-omg3q" className={styles.faqLink}>
+                Tham khảo bảng giá
+              </Link>
             </div>
           </section>
         </main>

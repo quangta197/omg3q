@@ -36,6 +36,26 @@ export type BlogPost = {
   title: string;
   description: string;
   category: string;
+  readTime: string;
+  intro: string;
+  keywords: string[];
+  metrics: Array<{ label: string; value: string }>;
+  sections: Array<{
+    heading: string;
+    paragraphs: string[];
+    bullets?: string[];
+  }>;
+  faq: Array<{
+    question: string;
+    answer: string;
+  }>;
+  relatedLinks: Array<{
+    label: string;
+    href: string;
+    description: string;
+  }>;
+  ctaHref: string;
+  ctaLabel: string;
 };
 
 export type ServerOption = {

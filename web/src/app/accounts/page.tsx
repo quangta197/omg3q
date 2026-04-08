@@ -219,19 +219,21 @@ export async function generateMetadata({
   const filters = normalizeFilters(await searchParams);
   const hasCustomState = !isDefaultListing(filters);
   const title = filters.search
-    ? `Kết quả tìm nick OMG3Q cho "${filters.search}"`
+    ? `Kết quả mua nick OMG3Q cho "${filters.search}" | Shop acc OMG3Q`
     : hasCustomState
-      ? "Lọc nick OMG3Q theo server và giá"
-      : "Danh sách nick OMG3Q theo server, VIP và mức giá";
+      ? "Lọc nick OMG3Q theo server, giá và quốc gia | ShopOMG3Q"
+      : "Mua Nick OMG3Q | Shop Acc OMG3Q Theo Server, VIP, Giá";
   const description = hasCustomState
-    ? "Kết quả lọc nick OMG3Q theo server, quốc gia và giá để bạn chọn nhanh tài khoản phù hợp."
-    : "Danh sách nick OMG3Q đang bán, cập nhật theo server, VIP và mức giá.";
+    ? "Kết quả lọc nick OMG3Q theo server, quốc gia và giá để bạn chọn nhanh acc phù hợp trước khi chốt."
+    : "Danh sách nick OMG3Q đang bán theo server, quốc gia, VIP và mức giá. Có ảnh thật, mô tả rõ, hỗ trợ giữ acc và tư vấn chốt nhanh.";
 
   return createMetadata({
     title,
     description,
     path: "/accounts",
     keywords: [
+      "mua nick omg3q",
+      "shop acc omg3q",
       "danh sách nick omg3q",
       "mua nick omg3q theo server",
       "lọc nick omg3q",
@@ -313,6 +315,31 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
         ]}
       />
 
+      <header className={styles.pageIntro}>
+        <div>
+          <span className={styles.resultsEyebrow}>Shop acc OMG3Q</span>
+          <h1 className={styles.pageTitle}>
+            Mua nick OMG3Q theo server, quốc gia và tầm giá phù hợp
+          </h1>
+          <p className={styles.pageDescription}>
+            Trang danh sách này tập trung đúng intent tìm kiếm “mua nick OMG3Q” và
+            “shop acc OMG3Q”, giúp bạn lọc nhanh theo server, giá, quốc gia rồi đi
+            thẳng vào từng trang chi tiết account để chốt.
+          </p>
+        </div>
+
+        <div className={styles.pageLinks}>
+          <Link href="/bang-gia-nick-omg3q" className={styles.pageLinkPrimary}>
+            Xem bảng giá
+          </Link>
+          <Link
+            href="/blog/cach-mua-nick-omg3q-an-toan"
+            className={styles.pageLinkSecondary}
+          >
+            Cách mua nick an toàn
+          </Link>
+        </div>
+      </header>
 
       <section className={styles.toolbar}>
         <form className={styles.filterPanel} action="/accounts" method="get">
