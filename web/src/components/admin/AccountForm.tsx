@@ -60,6 +60,7 @@ type AccountFormProps = {
 };
 
 const MAX_GALLERY_IMAGE_COUNT = 20;
+const MAX_UPLOAD_ATTEMPTS = 3;
 
 function slugify(value: string) {
   return value
@@ -105,18 +106,81 @@ function isNewGalleryImage(
 
 function getBrowserSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const publicKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!url || !anonKey) {
+  if (!url || !publicKey) {
     throw new Error("Thiếu cấu hình Supabase public để upload ảnh.");
   }
 
-  return createClient(url, anonKey, {
+  return createClient(url, publicKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
     },
   });
+}
+
+function waitForUploadRetry(delayMs: number) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, delayMs);
+  });
+}
+
+function isRetryableUploadError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const normalizedMessage = error.message.toLowerCase();
+
+  return (
+    error instanceof TypeError ||
+    normalizedMessage.includes("failed to fetch") ||
+    normalizedMessage.includes("network request failed") ||
+    normalizedMessage.includes("load failed") ||
+    normalizedMessage.includes("networkerror") ||
+    normalizedMessage.includes("fetch")
+  );
+}
+
+async function uploadFileToSignedUrlWithRetry(
+  supabase: ReturnType<typeof getBrowserSupabaseClient>,
+  bucket: string,
+  target: PendingUploadTicket,
+  file: File
+) {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= MAX_UPLOAD_ATTEMPTS; attempt += 1) {
+    try {
+      const { error } = await supabase.storage
+        .from(bucket)
+        .uploadToSignedUrl(target.path, target.token, file, {
+          upsert: false,
+          contentType: file.type || undefined,
+        });
+
+      if (!error) {
+        return;
+      }
+
+      lastError = new Error(error.message);
+    } catch (error) {
+      lastError = error;
+    }
+
+    if (!isRetryableUploadError(lastError) || attempt === MAX_UPLOAD_ATTEMPTS) {
+      break;
+    }
+
+    await waitForUploadRetry(attempt * 1200);
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Không thể upload ảnh lên Supabase Storage.");
 }
 
 function IconArrowUp() {
@@ -259,22 +323,14 @@ export function AccountForm({
     }
 
     const supabase = getBrowserSupabaseClient();
+    const bucket = data.bucket;
     const uploadedImages = new Map<string, PendingUploadTicket>();
 
     for (const [index, item] of items.entries()) {
       setMessage(`Đang upload ảnh ${index + 1}/${items.length}...`);
 
       const target = data.uploads[index];
-      const { error: uploadError } = await supabase.storage
-        .from(data.bucket)
-        .uploadToSignedUrl(target.path, target.token, item.file, {
-          upsert: false,
-          contentType: item.file.type || undefined,
-        });
-
-      if (uploadError) {
-        throw new Error(uploadError.message);
-      }
+      await uploadFileToSignedUrlWithRetry(supabase, bucket, target, item.file);
 
       uploadedImages.set(item.clientId, target);
     }
