@@ -4,6 +4,7 @@ import {
   SearchableSelect,
   type SearchableSelectOption,
 } from "@/components/ui/SearchableSelect";
+import { FormattedNumberInput } from "@/components/ui/FormattedNumberInput";
 import { AccountGrid } from "@/components/marketing/AccountGrid";
 import { JsonLd } from "@/components/seo/JsonLd";
 import {
@@ -25,12 +26,6 @@ const sortOptions: Array<{ value: AccountSort; label: string }> = [
   { value: "newest", label: "Mới nhất" },
   { value: "price_asc", label: "Giá tăng dần" },
   { value: "price_desc", label: "Giá giảm dần" },
-];
-
-const pricePresets = [
-  { label: "Dưới 500k", priceMax: 500000 },
-  { label: "500k - 2tr", priceMin: 500000, priceMax: 2000000 },
-  { label: "Trên 2tr", priceMin: 2000000 },
 ];
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -299,6 +294,12 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
   const startItem = result.total > 0 ? (result.page - 1) * result.limit + 1 : 0;
   const endItem = result.total > 0 ? startItem + result.items.length - 1 : 0;
   const paginationItems = buildPageItems(result.page, result.totalPages);
+  const currentSortLabel =
+    sortOptions.find((item) => item.value === result.appliedFilters.sort)?.label ??
+    sortOptions[0].label;
+  const filterSummaryLabel = activeFilters.length
+    ? `${activeFilters.length} điều kiện đang áp dụng`
+    : "Đang xem toàn bộ danh sách";
 
   return (
     <main className={`${sharedStyles.stack} ${styles.page}`}>
@@ -312,175 +313,140 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
         ]}
       />
 
-      <section className={styles.hero}>
-        <div className={styles.heroCopy}>
-          <span className={styles.eyebrow}>Danh sách giao dịch</span>
-          <h1 className={styles.title}>Lọc nick OMG3Q theo đúng nhu cầu mua</h1>
-          <p className={styles.description}>
-            Tìm nhanh theo server, quốc gia và mức giá. Mỗi tài khoản đều có ảnh,
-            mô tả và tình trạng rõ ràng để bạn so sánh trước khi chốt.
-          </p>
-        </div>
-
-        <div className={styles.quickRail}>
-          {servers.slice(0, 4).map((server) => (
-            <Link
-              key={server.id}
-              href={`/accounts/server/${server.code}`}
-              className={styles.quickLink}
-            >
-              {server.name}
-            </Link>
-          ))}
-          {nations.slice(0, 3).map((nation) => (
-            <Link
-              key={nation.id}
-              href={`/accounts/nation/${nation.code}`}
-              className={styles.quickLinkSecondary}
-            >
-              Quốc gia {nation.name}
-            </Link>
-          ))}
-        </div>
-      </section>
 
       <section className={styles.toolbar}>
         <form className={styles.filterPanel} action="/accounts" method="get">
-          <div className={styles.fieldWide}>
-            <label htmlFor="search" className={styles.label}>
-              Từ khóa
-            </label>
-            <input
-              id="search"
-              name="search"
-              type="search"
-              className={styles.input}
-              defaultValue={result.appliedFilters.search ?? ""}
-              placeholder="Tên nick, mô tả hoặc nhu cầu cụ thể"
-            />
-          </div>
+          <div className={styles.panelHeader}>
+            <div>
+              <span className={styles.panelEyebrow}>Bộ lọc chính</span>
+              <h2 className={styles.panelTitle}>Khoanh vùng đúng nick cần tìm</h2>
+              <p className={styles.panelDescription}>
+                Điền từ khóa, chọn server hoặc đặt khung giá để rút ngắn thời gian
+                duyệt acc.
+              </p>
+            </div>
 
-          <div>
-            <label htmlFor="server" className={styles.label}>
-              Server
-            </label>
-            <SearchableSelect
-              key={result.appliedFilters.server ?? "all-servers"}
-              id="server"
-              name="server"
-              defaultValue={result.appliedFilters.server ?? ""}
-              options={serverSelectOptions}
-              emptyLabel="Tất cả server"
-              placeholder="Tìm server như S930"
-              ariaLabel="Lọc theo server"
-              inputClassName={styles.select}
-            />
-          </div>
-
-          <div>
-            <label htmlFor="nation" className={styles.label}>
-              Quốc gia
-            </label>
-            <select
-              id="nation"
-              name="nation"
-              className={styles.select}
-              defaultValue={result.appliedFilters.nation ?? ""}
-            >
-              <option value="">Tất cả quốc gia</option>
-              {nations.map((nation) => (
-                <option key={nation.id} value={nation.code}>
-                  {nation.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="price_min" className={styles.label}>
-              Giá từ
-            </label>
-            <input
-              id="price_min"
-              name="price_min"
-              type="number"
-              min="0"
-              step="100000"
-              className={styles.input}
-              defaultValue={result.appliedFilters.priceMin ?? ""}
-              placeholder="0"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="price_max" className={styles.label}>
-              Giá đến
-            </label>
-            <input
-              id="price_max"
-              name="price_max"
-              type="number"
-              min="0"
-              step="100000"
-              className={styles.input}
-              defaultValue={result.appliedFilters.priceMax ?? ""}
-              placeholder="5000000"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="sort" className={styles.label}>
-              Sắp xếp
-            </label>
-            <select
-              id="sort"
-              name="sort"
-              className={styles.select}
-              defaultValue={result.appliedFilters.sort ?? "newest"}
-            >
-              {sortOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className={styles.actions}>
-            <button type="submit" className={styles.primaryButton}>
-              Áp dụng bộ lọc
-            </button>
-            <Link href="/accounts" className={styles.secondaryButton}>
-              Xóa lọc
-            </Link>
-          </div>
-        </form>
-
-        <div className={styles.quickPanels}>
-          <div className={styles.presetCard}>
-            <span className={styles.presetTitle}>Lọc nhanh theo giá</span>
-            <div className={styles.presetList}>
-              {pricePresets.map((preset) => (
-                <Link
-                  key={preset.label}
-                  href={buildAccountsPath({
-                    ...result.appliedFilters,
-                    ...preset,
-                    page: 1,
-                  })}
-                  className={styles.presetLink}
-                >
-                  {preset.label}
-                </Link>
-              ))}
+            <div className={styles.panelSummary}>
+              <span className={styles.panelSummaryLabel}>Trạng thái lọc</span>
+              <strong>{filterSummaryLabel}</strong>
             </div>
           </div>
-        </div>
+
+          <div className={styles.filterGrid}>
+            <div className={styles.fieldWide}>
+              <label htmlFor="search" className={styles.label}>
+                Từ khóa
+              </label>
+              <input
+                id="search"
+                name="search"
+                type="search"
+                className={styles.input}
+                defaultValue={result.appliedFilters.search ?? ""}
+                placeholder="Tên nick, mô tả hoặc nhu cầu cụ thể"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="server" className={styles.label}>
+                Server
+              </label>
+              <SearchableSelect
+                key={result.appliedFilters.server ?? "all-servers"}
+                id="server"
+                name="server"
+                defaultValue={result.appliedFilters.server ?? ""}
+                options={serverSelectOptions}
+                emptyLabel="Tất cả server"
+                placeholder="Tìm server như S930"
+                ariaLabel="Lọc theo server"
+                inputClassName={styles.select}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="nation" className={styles.label}>
+                Quốc gia
+              </label>
+              <select
+                id="nation"
+                name="nation"
+                className={styles.select}
+                defaultValue={result.appliedFilters.nation ?? ""}
+              >
+                <option value="">Tất cả quốc gia</option>
+                {nations.map((nation) => (
+                  <option key={nation.id} value={nation.code}>
+                    {nation.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="price_min" className={styles.label}>
+                Giá từ
+              </label>
+              <FormattedNumberInput
+                id="price_min"
+                name="price_min"
+                className={styles.input}
+                defaultValue={result.appliedFilters.priceMin ?? null}
+                placeholder="0"
+                ariaLabel="Giá từ"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="price_max" className={styles.label}>
+                Giá đến
+              </label>
+              <FormattedNumberInput
+                id="price_max"
+                name="price_max"
+                className={styles.input}
+                defaultValue={result.appliedFilters.priceMax ?? null}
+                placeholder="5.000.000"
+                ariaLabel="Giá đến"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="sort" className={styles.label}>
+                Sắp xếp
+              </label>
+              <select
+                id="sort"
+                name="sort"
+                className={styles.select}
+                defaultValue={result.appliedFilters.sort ?? "newest"}
+              >
+                {sortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className={styles.panelFooter}>
+            <div className={styles.actions}>
+              <button type="submit" className={styles.primaryButton}>
+                Áp dụng bộ lọc
+              </button>
+              <Link href="/accounts" className={styles.secondaryButton}>
+                Xóa lọc
+              </Link>
+            </div>
+          </div>
+        </form>
       </section>
 
       <section className={styles.resultsSection}>
         <div className={styles.resultsBar}>
-          <div>
+          <div className={styles.resultsCopy}>
+            <span className={styles.resultsEyebrow}>Danh sách đang hiển thị</span>
             <h2 className={styles.resultsTitle}>Tài khoản đang rao bán</h2>
             <p className={styles.resultsText}>
               {result.total > 0
@@ -489,12 +455,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
             </p>
           </div>
           <div className={styles.resultsMeta}>
-            <span>
-              {
-                sortOptions.find((item) => item.value === result.appliedFilters.sort)
-                  ?.label
-              }
-            </span>
+            <span>{currentSortLabel}</span>
             <span>{result.total.toLocaleString("vi-VN")} kết quả</span>
           </div>
         </div>
@@ -563,36 +524,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
           </nav>
         ) : null}
 
-        <div className={styles.supportPanel}>
-          <div>
-            <span className={styles.supportEyebrow}>Gợi ý xem nhanh</span>
-            <h3 className={styles.supportTitle}>Xem nhanh theo server hoặc quốc gia</h3>
-            <p className={styles.supportText}>
-              Nếu bạn đã nhắm sẵn nhóm muốn mua, mở các liên kết bên dưới để vào
-              đúng danh sách phù hợp nhanh hơn.
-            </p>
-          </div>
-          <div className={styles.supportLinks}>
-            {servers.slice(0, 3).map((server) => (
-              <Link
-                key={server.id}
-                href={`/accounts/server/${server.code}`}
-                className={styles.supportLink}
-              >
-                {server.name}
-              </Link>
-            ))}
-            {nations.slice(0, 3).map((nation) => (
-              <Link
-                key={nation.id}
-                href={`/accounts/nation/${nation.code}`}
-                className={styles.supportLinkAlt}
-              >
-                Quốc gia {nation.name}
-              </Link>
-            ))}
-          </div>
-        </div>
+      
       </section>
     </main>
   );

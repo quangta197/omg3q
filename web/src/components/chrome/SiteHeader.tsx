@@ -5,8 +5,8 @@ import styles from "./SiteHeader.module.css";
 const navItems = [
   { href: "/", label: "Trang Chủ" },
   { href: "/accounts", label: "Mua Nick" },
-  { href: "/bang-gia-nick-omg3q", label: "Bảng Giá" },
-  { href: "/blog", label: "Tin Tức" },
+  // { href: "/bang-gia-nick-omg3q", label: "Bảng Giá" },
+  // { href: "/blog", label: "Tin Tức" },
 ];
 
 export function SiteHeader() {
@@ -30,9 +30,6 @@ export function SiteHeader() {
 
         <div className={styles.actions}>
           <ThemeToggle />
-          <Link href="/bang-gia-nick-omg3q" className={styles.secondaryAction}>
-            Ký Gửi
-          </Link>
           <Link href="/lien-he" className={styles.primaryAction}>
             Liên Hệ
           </Link>
