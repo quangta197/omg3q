@@ -5,10 +5,12 @@ import {
   type SearchableSelectOption,
 } from "@/components/ui/SearchableSelect";
 import { AccountGrid } from "@/components/marketing/AccountGrid";
+import { HomeSortControl } from "@/components/marketing/HomeSortControl";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { getFeaturedAccounts, getServers } from "@/lib/accounts";
 import { createMetadata, formatPrice } from "@/lib/seo";
 import { buildBreadcrumbSchema, buildItemListSchema } from "@/lib/schema";
+import type { AccountSort, AccountSummary } from "@/lib/types";
 import styles from "./page.module.css";
 
 export const revalidate = 300;
@@ -56,13 +58,49 @@ const HOME_BANNER_SOURCES = {
 const HARD_CODED_HOME_BANNER_HREF = "/accounts";
 const HARD_CODED_HOME_BANNER_ALT = "Banner giao dịch chính chủ nick VIP OMG3Q Shop";
 
-export default async function Home() {
+type HomeSearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+type HomePageProps = {
+  searchParams: HomeSearchParams;
+};
+
+function firstValue(value: string | string[] | undefined) {
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+
+  return value;
+}
+
+function parseHomeSort(value: string | undefined): AccountSort {
+  if (value === "price_asc" || value === "price_desc") {
+    return value;
+  }
+
+  return "newest";
+}
+
+function sortHomeAccounts(items: AccountSummary[], sort: AccountSort) {
+  if (sort === "price_asc") {
+    return items.slice().sort((left, right) => left.price - right.price);
+  }
+
+  if (sort === "price_desc") {
+    return items.slice().sort((left, right) => right.price - left.price);
+  }
+
+  return items;
+}
+
+export default async function Home({ searchParams }: HomePageProps) {
+  const sort = parseHomeSort(firstValue((await searchParams).sort));
   const [featuredAccounts, servers] = await Promise.all([
     getFeaturedAccounts(6),
     getServers(),
   ]);
-  const spotlightAccount = featuredAccounts[0] ?? null;
-  const bannerAccounts = featuredAccounts.slice(1, 5);
+  const sortedFeaturedAccounts = sortHomeAccounts(featuredAccounts, sort);
+  const spotlightAccount = sortedFeaturedAccounts[0] ?? null;
+  const bannerAccounts = sortedFeaturedAccounts.slice(1, 5);
 
   const serverOptions: SearchableSelectOption[] = servers.map((server) => ({
     value: server.code,
@@ -75,7 +113,7 @@ export default async function Home() {
       <JsonLd
         data={[
           buildBreadcrumbSchema([{ name: "Trang chủ", path: "/" }]),
-          buildItemListSchema("/", featuredAccounts),
+          buildItemListSchema("/", sortedFeaturedAccounts),
         ]}
       />
 
@@ -250,18 +288,11 @@ export default async function Home() {
                   Tài Khoản Đang <span>Rao Bán</span>
                 </h2>
               </div>
-              <div className={styles.sortBox}>
-                <span>Sắp xếp:</span>
-                <select defaultValue="newest" aria-label="Sắp xếp tài khoản nổi bật">
-                  <option value="newest">Mới nhất</option>
-                  <option value="price-asc">Giá tăng dần</option>
-                  <option value="price-desc">Giá giảm dần</option>
-                </select>
-              </div>
+              <HomeSortControl value={sort} className={styles.sortBox} />
             </div>
 
             <AccountGrid
-              items={featuredAccounts}
+              items={sortedFeaturedAccounts}
               emptyMessage="Hiện chưa có tài khoản nổi bật. Bạn có thể quay lại sau hoặc liên hệ shop để được tư vấn nhanh."
             />
 
