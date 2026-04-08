@@ -30,7 +30,7 @@ export function FloatingContact() {
       </a>
       <a
         className={`${styles.button} ${styles.hotline}`}
-        href={`tel:${process.env.NEXT_PUBLIC_PHONE || "0123456789"}`}
+        href={`tel:${process.env.NEXT_PUBLIC_PHONE || "0366710837"}`}
         aria-label="Hotline"
         title="Hotline"
       >

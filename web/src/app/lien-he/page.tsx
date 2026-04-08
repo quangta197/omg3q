@@ -31,8 +31,8 @@ export default function ContactPage() {
             sẽ tư vấn theo server, phân khúc giá và nhu cầu phù hợp.
           </p>
           <div className={styles.meta}>
-            <a href={`tel:${process.env.NEXT_PUBLIC_PHONE || "0123456789"}`}>
-              Hotline: {process.env.NEXT_PUBLIC_PHONE || "0123456789"}
+            <a href={`tel:${process.env.NEXT_PUBLIC_PHONE || "0366710837"}`}>
+              Hotline: {process.env.NEXT_PUBLIC_PHONE || "0366710837"}
             </a>
             <a href={process.env.NEXT_PUBLIC_ZALO_LINK || "#"}>Zalo hỗ trợ</a>
             <a href={process.env.NEXT_PUBLIC_FB_PAGE || "#"}>Messenger</a>

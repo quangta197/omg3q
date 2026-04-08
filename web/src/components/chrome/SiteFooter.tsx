@@ -57,7 +57,7 @@ export function SiteFooter() {
             ngân sách.
           </p>
           <div className={styles.socials}>
-            <a href={`tel:${process.env.NEXT_PUBLIC_PHONE || "0123456789"}`}>
+            <a href={`tel:${process.env.NEXT_PUBLIC_PHONE || "0366710837"}`}>
               <PhoneIcon className={styles.socialIcon} />
               <span>Hotline</span>
             </a>

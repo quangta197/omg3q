@@ -202,9 +202,9 @@ export default async function AccountDetailPage({
               </Link>
               <a
                 className={styles.callCta}
-                href={`tel:${process.env.NEXT_PUBLIC_PHONE || "0123456789"}`}
+                href={`tel:${process.env.NEXT_PUBLIC_PHONE || "0366710837"}`}
               >
-                Gọi ngay: {process.env.NEXT_PUBLIC_PHONE || "0123456789"}
+                Gọi ngay: {process.env.NEXT_PUBLIC_PHONE || "0366710837"}
               </a>
             </div>
 

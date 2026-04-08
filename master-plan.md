@@ -902,7 +902,7 @@ CREATE TABLE site_settings (
 
 -- Seed settings
 INSERT INTO site_settings (key, value) VALUES
-    ('contact_info', '{"zalo": "0123456789", "facebook": "https://fb.com/omg3q", "phone": "0123456789", "email": "lienhe@omg3q.vn"}'::jsonb),
+    ('contact_info', '{"zalo": "0366710837", "facebook": "https://fb.com/omg3q", "phone": "0366710837", "email": "lienhe@omg3q.vn"}'::jsonb),
     ('site_meta', '{"title": "OMG 3Q - Mua bán nick uy tín", "description": "Chuyên mua bán nick OMG 3Q giá rẻ, uy tín #1"}'::jsonb),
     ('pricing_note', '{"text": "Giá đã bao gồm phí chuyển nick"}'::jsonb);
 
@@ -1493,9 +1493,9 @@ NEXT_PUBLIC_SITE_URL=https://omg3q.vn
 NEXT_PUBLIC_SITE_NAME=OMG 3Q Shop
 
 # Contact
-NEXT_PUBLIC_ZALO_LINK=https://zalo.me/0123456789
+NEXT_PUBLIC_ZALO_LINK=https://zalo.me/0366710837
 NEXT_PUBLIC_FB_PAGE=https://m.me/omg3qshop
-NEXT_PUBLIC_PHONE=0123456789
+NEXT_PUBLIC_PHONE=0366710837
 
 # Admin Auth
 ADMIN_ALLOWED_EMAILS=admin@omg3q.vn
