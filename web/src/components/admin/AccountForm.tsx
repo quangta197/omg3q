@@ -1,8 +1,8 @@
 "use client";
 
-import { createClient } from "@supabase/supabase-js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import * as tus from "tus-js-client";
 import {
   SearchableSelect,
   type SearchableSelectOption,
@@ -60,7 +60,8 @@ type AccountFormProps = {
 };
 
 const MAX_GALLERY_IMAGE_COUNT = 20;
-const MAX_UPLOAD_ATTEMPTS = 3;
+const TUS_CHUNK_SIZE = 6 * 1024 * 1024;
+const TUS_RETRY_DELAYS = [0, 1500, 4000, 8000, 15000];
 
 function slugify(value: string) {
   return value
@@ -104,83 +105,90 @@ function isNewGalleryImage(
   return item.file instanceof File;
 }
 
-function getBrowserSupabaseClient() {
+function getSupabaseResumableUploadEndpoint() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const publicKey =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!url || !publicKey) {
-    throw new Error("Thiếu cấu hình Supabase public để upload ảnh.");
+  if (!url) {
+    throw new Error("Thiếu NEXT_PUBLIC_SUPABASE_URL để upload ảnh.");
   }
 
-  return createClient(url, publicKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
+  const projectUrl = new URL(url);
+  const directStorageHost = projectUrl.hostname.includes(".storage.")
+    ? projectUrl.hostname
+    : projectUrl.hostname.replace(/\.supabase\.co$/i, ".storage.supabase.co");
+
+  return `${projectUrl.protocol}//${directStorageHost}/storage/v1/upload/resumable`;
+}
+
+async function uploadFileWithTus(
+  endpoint: string,
+  bucket: string,
+  ticket: PendingUploadTicket,
+  file: File,
+  onProgress: (bytesUploaded: number, bytesTotal: number) => void
+) {
+  return new Promise<void>((resolve, reject) => {
+    const upload = new tus.Upload(file, {
+      endpoint,
+      retryDelays: TUS_RETRY_DELAYS,
+      headers: {
+        "x-signature": ticket.token,
+        "x-upsert": "false",
+      },
+      uploadDataDuringCreation: true,
+      removeFingerprintOnSuccess: true,
+      chunkSize: TUS_CHUNK_SIZE,
+      metadata: {
+        bucketName: bucket,
+        objectName: ticket.path,
+        contentType: file.type || "application/octet-stream",
+        cacheControl: "3600",
+      },
+      onError(error) {
+        reject(error);
+      },
+      onProgress(bytesUploaded, bytesTotal) {
+        onProgress(bytesUploaded, bytesTotal);
+      },
+      onSuccess() {
+        resolve();
+      },
+    });
+
+    void upload
+      .findPreviousUploads()
+      .then((previousUploads) => {
+        if (previousUploads.length > 0) {
+          upload.resumeFromPreviousUpload(previousUploads[0]);
+        }
+
+        upload.start();
+      })
+      .catch((error) => {
+        reject(error);
+      });
   });
 }
 
-function waitForUploadRetry(delayMs: number) {
-  return new Promise((resolve) => {
-    window.setTimeout(resolve, delayMs);
-  });
-}
-
-function isRetryableUploadError(error: unknown) {
+function getSubmitErrorMessage(error: unknown) {
   if (!(error instanceof Error)) {
-    return false;
+    return "Không thể lưu tài khoản.";
   }
 
   const normalizedMessage = error.message.toLowerCase();
 
-  return (
+  if (
     error instanceof TypeError ||
     normalizedMessage.includes("failed to fetch") ||
+    normalizedMessage.includes("failed to upload chunk") ||
+    normalizedMessage.includes("upload creation failed") ||
     normalizedMessage.includes("network request failed") ||
-    normalizedMessage.includes("load failed") ||
-    normalizedMessage.includes("networkerror") ||
-    normalizedMessage.includes("fetch")
-  );
-}
-
-async function uploadFileToSignedUrlWithRetry(
-  supabase: ReturnType<typeof getBrowserSupabaseClient>,
-  bucket: string,
-  target: PendingUploadTicket,
-  file: File
-) {
-  let lastError: unknown;
-
-  for (let attempt = 1; attempt <= MAX_UPLOAD_ATTEMPTS; attempt += 1) {
-    try {
-      const { error } = await supabase.storage
-        .from(bucket)
-        .uploadToSignedUrl(target.path, target.token, file, {
-          upsert: false,
-          contentType: file.type || undefined,
-        });
-
-      if (!error) {
-        return;
-      }
-
-      lastError = new Error(error.message);
-    } catch (error) {
-      lastError = error;
-    }
-
-    if (!isRetryableUploadError(lastError) || attempt === MAX_UPLOAD_ATTEMPTS) {
-      break;
-    }
-
-    await waitForUploadRetry(attempt * 1200);
+    normalizedMessage.includes("networkerror")
+  ) {
+    return "Kết nối upload bị gián đoạn trên mạng di động. Hãy thử lại, hệ thống sẽ dùng resumable upload để tiếp tục ổn định hơn.";
   }
 
-  throw lastError instanceof Error
-    ? lastError
-    : new Error("Không thể upload ảnh lên Supabase Storage.");
+  return error.message;
 }
 
 function IconArrowUp() {
@@ -322,7 +330,7 @@ export function AccountForm({
       throw new Error("Số lượng ảnh upload không khớp với dữ liệu đã chọn.");
     }
 
-    const supabase = getBrowserSupabaseClient();
+    const endpoint = getSupabaseResumableUploadEndpoint();
     const bucket = data.bucket;
     const uploadedImages = new Map<string, PendingUploadTicket>();
 
@@ -330,7 +338,10 @@ export function AccountForm({
       setMessage(`Đang upload ảnh ${index + 1}/${items.length}...`);
 
       const target = data.uploads[index];
-      await uploadFileToSignedUrlWithRetry(supabase, bucket, target, item.file);
+      await uploadFileWithTus(endpoint, bucket, target, item.file, (bytesUploaded, bytesTotal) => {
+        const progress = bytesTotal > 0 ? Math.round((bytesUploaded / bytesTotal) * 100) : 0;
+        setMessage(`Đang upload ảnh ${index + 1}/${items.length} (${progress}%)...`);
+      });
 
       uploadedImages.set(item.clientId, target);
     }
@@ -498,13 +509,8 @@ export function AccountForm({
       router.push(`/admin/accounts/${data.id}`);
       router.refresh();
     } catch (submitError) {
-      setError(
-        submitError instanceof TypeError && submitError.message === "Failed to fetch"
-          ? "Kết nối upload bị gián đoạn. Hãy thử lại với ít ảnh hơn hoặc kiểm tra mạng."
-          : submitError instanceof Error
-            ? submitError.message
-            : "Không thể lưu tài khoản."
-      );
+      setMessage("");
+      setError(getSubmitErrorMessage(submitError));
     } finally {
       setIsSubmitting(false);
     }
