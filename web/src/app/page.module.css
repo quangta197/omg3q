@@ -557,6 +557,31 @@
   color: var(--color-text);
 }
 
+.listingSummary {
+  margin-top: 10px;
+  color: var(--color-text-soft);
+  font-size: 0.94rem;
+  line-height: 1.66;
+}
+
+.listingCtaRow {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+.listingCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #ff005c, #ff2b66);
+  color: white;
+  font-weight: 800;
+}
+
 .trustStrip {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

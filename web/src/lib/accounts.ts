@@ -115,7 +115,7 @@ function mapAccountDetail(row: AccountRow): AccountDetail {
 
 function normalizePagination({
   page = 1,
-  limit = 12,
+  limit = 16,
 }: Pick<AccountListFilters, "page" | "limit">) {
   const safeLimit = Math.max(1, Math.min(limit, 24));
   const safePage = Math.max(1, page);
@@ -369,7 +369,7 @@ export const getAccountsByServer = cache(
   async (serverCode: string): Promise<AccountSummary[]> => {
     const { items } = await getAccountsWithFilters({
       server: serverCode,
-      limit: 48,
+      limit: 16,
       sort: "newest",
     });
     return items;
@@ -380,7 +380,7 @@ export const getAccountsByNation = cache(
   async (nationCode: string): Promise<AccountSummary[]> => {
     const { items } = await getAccountsWithFilters({
       nation: nationCode,
-      limit: 48,
+      limit: 16,
       sort: "newest",
     });
     return items;

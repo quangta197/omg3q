@@ -7,7 +7,11 @@ import {
 import { AccountGrid } from "@/components/marketing/AccountGrid";
 import { HomeSortControl } from "@/components/marketing/HomeSortControl";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { getAccounts, getFeaturedAccounts, getServers } from "@/lib/accounts";
+import {
+  getAccountsWithFilters,
+  getFeaturedAccounts,
+  getServers,
+} from "@/lib/accounts";
 import { blogPosts } from "@/lib/blog-data";
 import { createMetadata, formatPrice } from "@/lib/seo";
 import {
@@ -90,6 +94,7 @@ const HOME_BANNER_SOURCES = {
 };
 const HARD_CODED_HOME_BANNER_HREF = "/accounts";
 const HARD_CODED_HOME_BANNER_ALT = "Banner giao dịch chính chủ acc VIP OMG3Q Shop";
+const HOME_LIST_LIMIT = 16;
 
 type HomeSearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -127,13 +132,17 @@ function sortHomeAccounts(items: AccountSummary[], sort: AccountSort) {
 
 export default async function Home({ searchParams }: HomePageProps) {
   const sort = parseHomeSort(firstValue((await searchParams).sort));
-  const [featuredAccounts, allAccounts, servers] = await Promise.all([
+  const [featuredAccounts, homeListingResult, servers] = await Promise.all([
     getFeaturedAccounts(6),
-    getAccounts(),
+    getAccountsWithFilters({
+      page: 1,
+      limit: HOME_LIST_LIMIT,
+      sort,
+    }),
     getServers(),
   ]);
   const sortedFeaturedAccounts = sortHomeAccounts(featuredAccounts, sort);
-  const sortedAllAccounts = sortHomeAccounts(allAccounts, sort);
+  const sortedAllAccounts = homeListingResult.items;
   const spotlightAccount = sortedFeaturedAccounts[0] ?? sortedAllAccounts[0] ?? null;
   const bannerAccounts = (
     sortedFeaturedAccounts.length ? sortedFeaturedAccounts : sortedAllAccounts
@@ -335,8 +344,9 @@ export default async function Home({ searchParams }: HomePageProps) {
                   Tài Khoản Đang <span>Rao Bán</span>
                 </h2>
                 <p className={styles.listingSummary}>
-                  Đang hiển thị toàn bộ {sortedAllAccounts.length.toLocaleString("vi-VN")} acc
-                  đang bán trên shop.
+                  Đang hiển thị {sortedAllAccounts.length.toLocaleString("vi-VN")} /{" "}
+                  {homeListingResult.total.toLocaleString("vi-VN")} acc mới nhất trên
+                  shop. Khi cần xem hết, hãy mở trang danh sách đầy đủ.
                 </p>
               </div>
               <HomeSortControl value={sort} className={styles.sortBox} />
@@ -346,6 +356,14 @@ export default async function Home({ searchParams }: HomePageProps) {
               items={sortedAllAccounts}
               emptyMessage="Hiện chưa có tài khoản đang bán. Bạn có thể quay lại sau hoặc liên hệ shop để được tư vấn nhanh."
             />
+
+            {homeListingResult.total > sortedAllAccounts.length ? (
+              <div className={styles.listingCtaRow}>
+                <Link href="/accounts" className={styles.listingCta}>
+                  Xem toàn bộ {homeListingResult.total.toLocaleString("vi-VN")} acc
+                </Link>
+              </div>
+            ) : null}
 
             <div className={styles.trustStrip}>
               {stats.map((stat) => (
