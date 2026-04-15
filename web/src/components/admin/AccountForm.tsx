@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@supabase/supabase-js";
+import { Upload as TusUpload, isSupported as isTusSupported } from "tus-js-client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -64,6 +65,9 @@ const MAX_UPLOAD_ATTEMPTS = 3;
 const MAX_OPTIMIZED_IMAGE_DIMENSION = 1800;
 const IMAGE_OPTIMIZE_THRESHOLD_BYTES = 2.5 * 1024 * 1024;
 const OPTIMIZED_IMAGE_QUALITY = 0.82;
+const SUPABASE_TUS_CHUNK_SIZE_BYTES = 6 * 1024 * 1024;
+const SUPABASE_TUS_RETRY_DELAYS_MS = [0, 3000, 5000, 10000, 20000];
+const STORAGE_CACHE_CONTROL_SECONDS = "3600";
 
 function slugify(value: string) {
   return value
@@ -107,7 +111,7 @@ function isNewGalleryImage(
   return item.file instanceof File;
 }
 
-function getBrowserSupabaseClient() {
+function getBrowserSupabaseConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const publicKey =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
@@ -117,12 +121,29 @@ function getBrowserSupabaseClient() {
     throw new Error("Thiếu cấu hình cần thiết để tải ảnh lên.");
   }
 
+  return { url, publicKey };
+}
+
+function getBrowserSupabaseClient() {
+  const { url, publicKey } = getBrowserSupabaseConfig();
+
   return createClient(url, publicKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
     },
   });
+}
+
+function getSupabaseTusUploadEndpoint(supabaseUrl: string) {
+  const parsedUrl = new URL(supabaseUrl);
+
+  if (parsedUrl.hostname.endsWith(".supabase.co")) {
+    const projectId = parsedUrl.hostname.split(".")[0];
+    return `https://${projectId}.storage.supabase.co/storage/v1/upload/resumable/sign`;
+  }
+
+  return `${parsedUrl.origin}/storage/v1/upload/resumable/sign`;
 }
 
 function waitForUploadRetry(delayMs: number) {
@@ -240,6 +261,79 @@ async function optimizeImageForUpload(file: File) {
   }
 }
 
+type UploadProgressHandler = (bytesUploaded: number, bytesTotal: number) => void;
+
+function uploadFileToTusSignedUrl(
+  bucket: string,
+  target: PendingUploadTicket,
+  file: File,
+  onProgress?: UploadProgressHandler
+) {
+  const { url, publicKey } = getBrowserSupabaseConfig();
+  const endpoint = getSupabaseTusUploadEndpoint(url);
+
+  return new Promise<void>((resolve, reject) => {
+    let isSettled = false;
+    const settleOnce = (callback: () => void) => {
+      if (isSettled) {
+        return;
+      }
+
+      isSettled = true;
+      callback();
+    };
+
+    const upload = new TusUpload(file, {
+      endpoint,
+      headers: {
+        apikey: publicKey,
+        "x-signature": target.token,
+      },
+      metadata: {
+        bucketName: bucket,
+        objectName: target.path,
+        contentType: file.type || "application/octet-stream",
+        cacheControl: STORAGE_CACHE_CONTROL_SECONDS,
+      },
+      uploadDataDuringCreation: true,
+      removeFingerprintOnSuccess: true,
+      fingerprint: (currentFile) =>
+        Promise.resolve(
+          [
+            "omg3q-admin-upload",
+            target.path,
+            currentFile.name,
+            currentFile.type,
+            currentFile.size,
+            currentFile.lastModified,
+          ].join("-")
+        ),
+      chunkSize: SUPABASE_TUS_CHUNK_SIZE_BYTES,
+      retryDelays: SUPABASE_TUS_RETRY_DELAYS_MS,
+      onProgress,
+      onSuccess: () => {
+        settleOnce(resolve);
+      },
+      onError: (error) => {
+        settleOnce(() => reject(error));
+      },
+    });
+
+    upload
+      .findPreviousUploads()
+      .then((previousUploads) => {
+        if (previousUploads.length > 0) {
+          upload.resumeFromPreviousUpload(previousUploads[0]);
+        }
+
+        upload.start();
+      })
+      .catch((error) => {
+        settleOnce(() => reject(error));
+      });
+  });
+}
+
 async function uploadFileToSignedUrlWithRetry(
   supabase: ReturnType<typeof getBrowserSupabaseClient>,
   bucket: string,
@@ -276,6 +370,21 @@ async function uploadFileToSignedUrlWithRetry(
   throw lastError instanceof Error
     ? lastError
     : new Error("Không thể tải ảnh lên kho lưu trữ.");
+}
+
+async function uploadFileToStorageWithRetry(
+  supabase: ReturnType<typeof getBrowserSupabaseClient>,
+  bucket: string,
+  target: PendingUploadTicket,
+  file: File,
+  onProgress?: UploadProgressHandler
+) {
+  if (isTusSupported) {
+    await uploadFileToTusSignedUrl(bucket, target, file, onProgress);
+    return;
+  }
+
+  await uploadFileToSignedUrlWithRetry(supabase, bucket, target, file);
 }
 
 function getSubmitErrorMessage(error: unknown) {
@@ -408,16 +517,30 @@ export function AccountForm({
       return new Map<string, PendingUploadTicket>();
     }
 
+    const preparedUploads: Array<{
+      item: GalleryImageItem & { file: File };
+      file: File;
+    }> = [];
+
+    for (const [index, item] of items.entries()) {
+      setMessage(`Đang tối ưu ảnh ${index + 1}/${items.length}...`);
+
+      preparedUploads.push({
+        item,
+        file: await optimizeImageForUpload(item.file),
+      });
+    }
+
     const response = await fetch("/api/admin/uploads", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        files: items.map((item) => ({
-          name: item.file.name,
-          type: item.file.type,
-          size: item.file.size,
+        files: preparedUploads.map((upload) => ({
+          name: upload.file.name,
+          type: upload.file.type,
+          size: upload.file.size,
         })),
       }),
     });
@@ -441,15 +564,41 @@ export function AccountForm({
     const bucket = data.bucket;
     const uploadedImages = new Map<string, PendingUploadTicket>();
 
-    for (const [index, item] of items.entries()) {
-      setMessage(`Đang tối ưu ảnh ${index + 1}/${items.length}...`);
-      const optimizedFile = await optimizeImageForUpload(item.file);
-
-      setMessage(`Đang upload ảnh ${index + 1}/${items.length}...`);
+    for (const [index, upload] of preparedUploads.entries()) {
+      let lastProgressPercent = -1;
       const target = data.uploads[index];
-      await uploadFileToSignedUrlWithRetry(supabase, bucket, target, optimizedFile);
 
-      uploadedImages.set(item.clientId, target);
+      setMessage(`Đang upload ảnh ${index + 1}/${preparedUploads.length}...`);
+
+      await uploadFileToStorageWithRetry(
+        supabase,
+        bucket,
+        target,
+        upload.file,
+        (bytesUploaded, bytesTotal) => {
+          if (bytesTotal <= 0) {
+            return;
+          }
+
+          const nextProgressPercent = Math.min(
+            100,
+            Math.round((bytesUploaded / bytesTotal) * 100)
+          );
+
+          if (
+            lastProgressPercent === -1 ||
+            nextProgressPercent === 100 ||
+            nextProgressPercent >= lastProgressPercent + 5
+          ) {
+            lastProgressPercent = nextProgressPercent;
+            setMessage(
+              `Đang upload ảnh ${index + 1}/${preparedUploads.length} (${nextProgressPercent}%)...`
+            );
+          }
+        }
+      );
+
+      uploadedImages.set(upload.item.clientId, target);
     }
 
     return uploadedImages;
