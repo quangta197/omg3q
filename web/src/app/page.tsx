@@ -93,7 +93,6 @@ const HOME_BANNER_SOURCES = {
 };
 const HARD_CODED_HOME_BANNER_HREF = "/accounts";
 const HARD_CODED_HOME_BANNER_ALT = "Banner giao dịch chính chủ acc VIP OMG3Q Shop";
-const HOME_LIST_LIMIT = 16;
 
 type HomeSearchParams = Promise<Record<string, string | string[] | undefined>>;
 
