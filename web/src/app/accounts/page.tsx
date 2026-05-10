@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import {
   SearchableSelect,
   type SearchableSelectOption,
@@ -20,7 +21,7 @@ import styles from "./page.module.css";
 
 export const revalidate = 300;
 
-const DEFAULT_LIMIT = 12;
+const DEFAULT_LIMIT = 16;
 
 const sortOptions: Array<{ value: AccountSort; label: string }> = [
   { value: "newest", label: "Mới nhất" },
@@ -176,9 +177,11 @@ function buildPageItems(currentPage: number, totalPages: number) {
   const pages = new Set<number>([
     1,
     totalPages,
+    currentPage - 2,
     currentPage - 1,
     currentPage,
     currentPage + 1,
+    currentPage + 2,
   ]);
 
   const sortedPages = Array.from(pages)
@@ -250,6 +253,15 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
     getNations(),
     getAccountsWithFilters(filters),
   ]);
+
+  if (result.totalPages > 0 && result.page > result.totalPages) {
+    redirect(
+      buildAccountsPath({
+        ...result.appliedFilters,
+        page: result.totalPages,
+      })
+    );
+  }
 
   const serverSelectOptions: SearchableSelectOption[] = servers.map((server) => ({
     value: server.code,
@@ -504,6 +516,18 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
 
         {result.totalPages > 1 ? (
           <nav className={styles.pagination} aria-label="Phân trang danh sách acc">
+            <div className={styles.paginationControls}>
+              <Link
+                href={buildAccountsPath({
+                  ...result.appliedFilters,
+                  page: 1,
+                })}
+                className={styles.pageNav}
+                aria-disabled={result.page === 1}
+              >
+                Đầu
+              </Link>
+
             <Link
               href={buildAccountsPath({
                 ...result.appliedFilters,
@@ -548,6 +572,18 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
             >
               Sau
             </Link>
+
+              <Link
+                href={buildAccountsPath({
+                  ...result.appliedFilters,
+                  page: result.totalPages,
+                })}
+                className={styles.pageNav}
+                aria-disabled={result.page === result.totalPages}
+              >
+                Cuối
+              </Link>
+            </div>
           </nav>
         ) : null}
       </section>
