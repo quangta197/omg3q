@@ -40,14 +40,16 @@ export function SiteFooter() {
           <Link href="/accounts">Mua acc</Link>
           <Link href="/bang-gia-nick-omg3q">Bảng giá</Link>
           <Link href="/blog">Tin tức</Link>
+          <Link href="/quy-trinh-giao-dich">Quy trình giao dịch</Link>
         </div>
 
         <div className={styles.column}>
           <h3>Hỗ trợ khách hàng</h3>
-          <Link href="/blog/cach-mua-nick-omg3q-an-toan">Hướng dẫn mua acc</Link>
+          <Link href="/huong-dan-mua-acc-omg3q">Hướng dẫn mua acc</Link>
+          <Link href="/chinh-sach-bao-hanh">Chính sách bảo hành</Link>
           <Link href="/bang-gia-nick-omg3q">Bảng giá tham khảo</Link>
           <Link href="/accounts/server/s1">Acc theo server</Link>
-          <Link href="/accounts/nation/nguy">Acc theo quốc gia</Link>
+          <Link href="/accounts/vip">Acc VIP từ 3 triệu</Link>
         </div>
 
         <div className={styles.column}>

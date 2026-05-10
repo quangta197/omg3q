@@ -1,13 +1,29 @@
 import type { MetadataRoute } from "next";
-import { getAccountSlugs, getNationCodes, getServerCodes } from "@/lib/accounts";
+import {
+  getAccountSlugs,
+  getNationCodes,
+  getServerCodes,
+  getVipLevels,
+} from "@/lib/accounts";
 import { blogPosts } from "@/lib/blog-data";
 import { absoluteUrl } from "@/lib/seo";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const staticRoutes = ["/", "/accounts", "/bang-gia-nick-omg3q", "/blog", "/lien-he"];
-  const [servers, nations, accountSlugs] = await Promise.all([
+  const staticRoutes = [
+    "/",
+    "/accounts",
+    "/accounts/vip",
+    "/bang-gia-nick-omg3q",
+    "/blog",
+    "/lien-he",
+    "/huong-dan-mua-acc-omg3q",
+    "/quy-trinh-giao-dich",
+    "/chinh-sach-bao-hanh",
+  ];
+  const [servers, nations, vipLevels, accountSlugs] = await Promise.all([
     getServerCodes(),
     getNationCodes(),
+    getVipLevels(),
     getAccountSlugs(),
   ]);
 
@@ -29,6 +45,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: "weekly" as const,
       priority: 0.76,
+    })),
+    ...vipLevels.map((level) => ({
+      url: absoluteUrl(`/accounts/vip/${level}`),
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.78,
     })),
     ...accountSlugs.map((slug) => ({
       url: absoluteUrl(`/accounts/${slug}`),

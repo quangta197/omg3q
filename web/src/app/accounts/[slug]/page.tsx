@@ -2,8 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AccountGallery } from "@/components/accounts/AccountGallery";
 import { ContactForm } from "@/components/contact/ContactForm";
+import { AccountGrid } from "@/components/marketing/AccountGrid";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { getAccountBySlug, getAccountSlugs } from "@/lib/accounts";
+import {
+  getAccountBySlug,
+  getAccountSlugs,
+  getAccountsByServer,
+} from "@/lib/accounts";
 import {
   createMetadata,
   DEFAULT_SOCIAL_IMAGE_PATH,
@@ -116,6 +121,9 @@ export default async function AccountDetailPage({
       : [];
   const hasInstallment =
     account.installmentPrice !== null && account.installmentPrice > 0;
+  const relatedAccounts = (await getAccountsByServer(account.server))
+    .filter((item) => item.id !== account.id)
+    .slice(0, 4);
 
   return (
     <>
@@ -219,6 +227,22 @@ export default async function AccountDetailPage({
               </p>
             </section>
 
+            <div className={styles.internalLinks}>
+              <Link href={`/accounts/server/${account.server}`}>
+                Acc cùng server {account.server.toUpperCase()}
+              </Link>
+              <Link href={`/accounts/nation/${account.nation}`}>
+                Acc cùng quốc gia {nationLabel}
+              </Link>
+              {account.price >= 3000000 ? (
+                <Link href="/accounts/vip">Acc VIP từ 3 triệu</Link>
+              ) : (
+                <Link href={`/accounts/vip/${account.vipLevel}`}>
+                  Acc VIP {account.vipLevel}
+                </Link>
+              )}
+            </div>
+
             <div className={styles.ctaBar}>
               <Link className={styles.closePill} href="/accounts">
                 Danh sách
@@ -262,6 +286,18 @@ export default async function AccountDetailPage({
             }
           />
         </section>
+
+        {relatedAccounts.length ? (
+          <section className={styles.relatedSection}>
+            <div className={styles.relatedHead}>
+              <span className={styles.relatedEyebrow}>Gợi ý cùng server</span>
+              <h2 className={styles.relatedTitle}>
+                Acc OMG3Q {account.server.toUpperCase()} khác đáng xem
+              </h2>
+            </div>
+            <AccountGrid items={relatedAccounts} />
+          </section>
+        ) : null}
       </main>
     </>
   );

@@ -387,6 +387,37 @@ export const getAccountsByNation = cache(
   }
 );
 
+export const getAccountsByVip = cache(
+  async (vipLevel: number): Promise<AccountSummary[]> => {
+    if (!isSupabaseConfigured() || !Number.isFinite(vipLevel) || vipLevel < 0) {
+      return [];
+    }
+
+    const supabase = getSupabaseServerClient();
+    const buildQuery = (selectClause: string) =>
+      supabase
+        .from("accounts")
+        .select(selectClause)
+        .eq("vip_level", Math.floor(vipLevel))
+        .in("status", ["available", "reserved"])
+        .order("is_featured", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(48);
+
+    let { data, error } = await buildQuery(ACCOUNT_SELECT);
+
+    if (error && isMissingInstallmentColumnError(error.message)) {
+      ({ data, error } = await buildQuery(ACCOUNT_SELECT_BASE));
+    }
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return ((data ?? []) as unknown as AccountRow[]).map(mapAccountSummary);
+  }
+);
+
 export const getServers = cache(async (): Promise<ServerOption[]> => {
   if (!isSupabaseConfigured()) {
     return [];
@@ -447,6 +478,30 @@ export const getNationCodes = cache(async (): Promise<string[]> => {
   return nations
     .filter((item) => activeNationIdSet.has(item.id))
     .map((item) => item.code);
+});
+
+export const getVipLevels = cache(async (): Promise<number[]> => {
+  if (!isSupabaseConfigured()) {
+    return [];
+  }
+
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("accounts")
+    .select("vip_level")
+    .in("status", ["available", "reserved"]);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return Array.from(
+    new Set(
+      (data ?? [])
+        .map((item) => Number(item.vip_level))
+        .filter((value) => Number.isFinite(value) && value > 0)
+    )
+  ).sort((left, right) => right - left);
 });
 
 export const getAccountSlugs = cache(async (): Promise<string[]> => {

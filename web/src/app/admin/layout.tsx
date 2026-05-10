@@ -33,6 +33,9 @@ export default async function AdminLayout({
               <Link href="/admin/accounts" className={styles.navLink}>
                 Tài khoản
               </Link>
+              <Link href="/admin/analytics" className={styles.navLinkMuted}>
+                Thống kê
+              </Link>
               <AdminLogoutButton />
             </>
           ) : (

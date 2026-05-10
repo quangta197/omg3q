@@ -9,6 +9,15 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/accounts/vip-:level(\\d+)",
+        destination: "/accounts/vip/:level",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

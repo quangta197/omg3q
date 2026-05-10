@@ -39,7 +39,9 @@
 
 .heroLead {
   display: grid;
+  gap: 0;
   justify-items: center;
+  margin-top: 8px;
   text-align: center;
 }
 
@@ -60,8 +62,8 @@
   margin-top: 16px;
   color: var(--color-text);
   font-family: var(--font-display), sans-serif;
-  font-size: clamp(2.4rem, 5vw, 4.4rem);
-  line-height: 0.98;
+  font-size: clamp(1.95rem, 3.4vw, 3.15rem);
+  line-height: 1.02;
 }
 
 .heroTitleAccent {
@@ -74,6 +76,28 @@
   color: var(--color-text-soft);
   font-size: 0.98rem;
   line-height: 1.7;
+}
+
+.heroProof {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+.heroProof span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface-strong);
+  color: var(--color-text-soft);
+  font-size: 0.78rem;
+  font-weight: 800;
+  box-shadow: var(--shadow-sm);
 }
 
 .bannerShell {
@@ -557,6 +581,56 @@
   color: var(--color-text);
 }
 
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.pageList {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pageNav,
+.pageLink,
+.pageCurrent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, white 18%);
+  border-radius: 13px;
+  font-weight: 800;
+}
+
+.pageNav,
+.pageLink {
+  background: var(--color-surface-strong);
+  color: var(--color-text-soft);
+}
+
+.pageCurrent {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-strong));
+  color: white;
+}
+
+.pageNavDisabled {
+  pointer-events: none;
+  opacity: 0.48;
+}
+
+.ellipsis {
+  color: var(--color-text-mute);
+  font-weight: 700;
+}
+
 .trustStrip {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -831,5 +905,16 @@
     padding: 14px 18px;
     min-height: 0;
     border-radius: 22px;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+  }
+
+  .pageList {
+    order: -1;
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
   }
 }

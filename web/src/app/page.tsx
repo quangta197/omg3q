@@ -7,7 +7,7 @@ import {
 import { AccountGrid } from "@/components/marketing/AccountGrid";
 import { HomeSortControl } from "@/components/marketing/HomeSortControl";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { getAccounts, getFeaturedAccounts, getServers } from "@/lib/accounts";
+import { getAccountsWithFilters, getFeaturedAccounts, getServers } from "@/lib/accounts";
 import { blogPosts } from "@/lib/blog-data";
 import { createMetadata, formatPrice } from "@/lib/seo";
 import {
@@ -20,6 +20,8 @@ import type { AccountSort, AccountSummary } from "@/lib/types";
 import styles from "./page.module.css";
 
 export const revalidate = 300;
+
+const HOME_PAGE_SIZE = 12;
 
 export const metadata = createMetadata({
   title: "Shop Acc OMG3Q Uy Tín #1 - Mua Bán Nick Giá Rẻ, Sẵn Sàn VIP & Lực Chiến",
@@ -57,7 +59,8 @@ const quickFilters = [
   { label: "Dưới 500k", href: "/accounts?price_max=500000" },
   { label: "500k - 2tr", href: "/accounts?price_min=500000&price_max=2000000" },
   { label: "Trên 2tr", href: "/accounts?price_min=2000000" },
-  { label: "Acc tân thủ", href: "/accounts?price_max=1000000" },
+  { label: "Acc VIP từ 3tr", href: "/accounts/vip" },
+  { label: "Hướng dẫn mua", href: "/huong-dan-mua-acc-omg3q" },
 ];
 
 const homeFaqs = [
@@ -113,6 +116,16 @@ function parseHomeSort(value: string | undefined): AccountSort {
   return "newest";
 }
 
+function parseHomePage(value: string | undefined) {
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return 1;
+  }
+
+  return Math.floor(parsed);
+}
+
 function sortHomeAccounts(items: AccountSummary[], sort: AccountSort) {
   if (sort === "price_asc") {
     return items.slice().sort((left, right) => left.price - right.price);
@@ -125,20 +138,81 @@ function sortHomeAccounts(items: AccountSummary[], sort: AccountSort) {
   return items;
 }
 
+function buildHomePath({
+  sort,
+  page,
+}: {
+  sort: AccountSort;
+  page: number;
+}) {
+  const params = new URLSearchParams();
+
+  if (sort !== "newest") {
+    params.set("sort", sort);
+  }
+
+  if (page > 1) {
+    params.set("page", String(page));
+  }
+
+  const query = params.toString();
+
+  return query ? `/?${query}` : "/";
+}
+
+function buildHomePageItems(currentPage: number, totalPages: number) {
+  const pages = new Set<number>([
+    1,
+    totalPages,
+    currentPage - 1,
+    currentPage,
+    currentPage + 1,
+  ]);
+
+  const sortedPages = Array.from(pages)
+    .filter((page) => page >= 1 && page <= totalPages)
+    .sort((left, right) => left - right);
+
+  const items: Array<number | "ellipsis"> = [];
+
+  sortedPages.forEach((page, index) => {
+    const previousPage = sortedPages[index - 1];
+
+    if (previousPage && page - previousPage > 1) {
+      items.push("ellipsis");
+    }
+
+    items.push(page);
+  });
+
+  return items;
+}
+
 export default async function Home({ searchParams }: HomePageProps) {
-  const sort = parseHomeSort(firstValue((await searchParams).sort));
-  const [featuredAccounts, allAccounts, servers] = await Promise.all([
+  const params = await searchParams;
+  const sort = parseHomeSort(firstValue(params.sort));
+  const page = parseHomePage(firstValue(params.page));
+  const [featuredAccounts, accountResult, servers] = await Promise.all([
     getFeaturedAccounts(6),
-    getAccounts(),
+    getAccountsWithFilters({
+      sort,
+      page,
+      limit: HOME_PAGE_SIZE,
+    }),
     getServers(),
   ]);
   const sortedFeaturedAccounts = sortHomeAccounts(featuredAccounts, sort);
-  const sortedAllAccounts = sortHomeAccounts(allAccounts, sort);
-  const spotlightAccount = sortedFeaturedAccounts[0] ?? sortedAllAccounts[0] ?? null;
+  const listedAccounts = accountResult.items;
+  const spotlightAccount = sortedFeaturedAccounts[0] ?? listedAccounts[0] ?? null;
   const bannerAccounts = (
-    sortedFeaturedAccounts.length ? sortedFeaturedAccounts : sortedAllAccounts
+    sortedFeaturedAccounts.length ? sortedFeaturedAccounts : listedAccounts
   ).slice(1, 5);
   const featuredGuides = blogPosts.slice(0, 3);
+  const startItem =
+    accountResult.total > 0 ? (accountResult.page - 1) * accountResult.limit + 1 : 0;
+  const endItem =
+    accountResult.total > 0 ? startItem + accountResult.items.length - 1 : 0;
+  const paginationItems = buildHomePageItems(accountResult.page, accountResult.totalPages);
   const jsonLdData = [
     buildWebPageSchema({
       name: "OMG3Q Shop",
@@ -148,7 +222,7 @@ export default async function Home({ searchParams }: HomePageProps) {
       image: HOME_BANNER_SOURCES.tablet,
     }),
     buildBreadcrumbSchema([{ name: "Trang chủ", path: "/" }]),
-    buildItemListSchema("/", sortedAllAccounts),
+    buildItemListSchema(buildHomePath({ sort, page: accountResult.page }), listedAccounts),
     buildFaqSchema(homeFaqs),
   ].filter((item): item is Record<string, unknown> => Boolean(item));
 
@@ -296,6 +370,23 @@ export default async function Home({ searchParams }: HomePageProps) {
                 )}
               </div>
 
+              <div className={styles.heroLead}>
+                <span className={styles.eyebrow}>Shop acc OMG3Q uy tín</span>
+                <h1 className={styles.heroTitle}>
+                  Mua acc OMG3Q có ảnh thật, giá rõ và hỗ trợ bàn giao an toàn
+                </h1>
+                <p className={styles.heroText}>
+                  Chọn nhanh nick OMG3Q theo server, quốc gia, VIP và tầm giá. Mỗi
+                  tài khoản đều ưu tiên mô tả rõ tình trạng, gallery thực tế và kênh
+                  liên hệ trực tiếp để chốt giao dịch gọn hơn.
+                </p>
+                <div className={styles.heroProof}>
+                  <span>Ảnh thật từng acc</span>
+                  <span>Giữ acc qua Zalo</span>
+                  <span>Hỗ trợ sau bàn giao</span>
+                </div>
+              </div>
+
               <form className={styles.searchPanel} action="/accounts" method="get">
                 <input
                   className={styles.searchField}
@@ -335,17 +426,79 @@ export default async function Home({ searchParams }: HomePageProps) {
                   Tài Khoản Đang <span>Rao Bán</span>
                 </h2>
                 <p className={styles.listingSummary}>
-                  Đang hiển thị toàn bộ {sortedAllAccounts.length.toLocaleString("vi-VN")} acc
-                  đang bán trên shop.
+                  {accountResult.total > 0
+                    ? `Hiển thị ${startItem}-${endItem} / ${accountResult.total.toLocaleString(
+                        "vi-VN"
+                      )} acc đang bán. Bấm sang trang tiếp để xem thêm tài khoản phù hợp.`
+                    : "Hiện chưa có tài khoản đang bán trên shop."}
                 </p>
               </div>
               <HomeSortControl value={sort} className={styles.sortBox} />
             </div>
 
             <AccountGrid
-              items={sortedAllAccounts}
+              items={listedAccounts}
               emptyMessage="Hiện chưa có tài khoản đang bán. Bạn có thể quay lại sau hoặc liên hệ shop để được tư vấn nhanh."
             />
+
+            {accountResult.totalPages > 1 ? (
+              <nav className={styles.pagination} aria-label="Phân trang acc trang chủ">
+                <Link
+                  href={buildHomePath({
+                    sort,
+                    page: Math.max(1, accountResult.page - 1),
+                  })}
+                  className={`${styles.pageNav} ${
+                    accountResult.page === 1 ? styles.pageNavDisabled : ""
+                  }`}
+                  aria-disabled={accountResult.page === 1}
+                  tabIndex={accountResult.page === 1 ? -1 : undefined}
+                >
+                  Trước
+                </Link>
+
+                <div className={styles.pageList}>
+                  {paginationItems.map((item, index) =>
+                    item === "ellipsis" ? (
+                      <span key={`ellipsis-${index}`} className={styles.ellipsis}>
+                        ...
+                      </span>
+                    ) : (
+                      <Link
+                        key={item}
+                        href={buildHomePath({ sort, page: item })}
+                        className={
+                          item === accountResult.page
+                            ? styles.pageCurrent
+                            : styles.pageLink
+                        }
+                        aria-current={item === accountResult.page ? "page" : undefined}
+                      >
+                        {item}
+                      </Link>
+                    )
+                  )}
+                </div>
+
+                <Link
+                  href={buildHomePath({
+                    sort,
+                    page: Math.min(accountResult.totalPages, accountResult.page + 1),
+                  })}
+                  className={`${styles.pageNav} ${
+                    accountResult.page === accountResult.totalPages
+                      ? styles.pageNavDisabled
+                      : ""
+                  }`}
+                  aria-disabled={accountResult.page === accountResult.totalPages}
+                  tabIndex={
+                    accountResult.page === accountResult.totalPages ? -1 : undefined
+                  }
+                >
+                  Sau
+                </Link>
+              </nav>
+            ) : null}
 
             <div className={styles.trustStrip}>
               {stats.map((stat) => (
@@ -425,11 +578,14 @@ export default async function Home({ searchParams }: HomePageProps) {
               <Link href="/accounts" className={styles.faqLink}>
                 Mở danh sách acc OMG3Q
               </Link>
-              <Link href="/blog/cach-mua-nick-omg3q-an-toan" className={styles.faqLink}>
+              <Link href="/huong-dan-mua-acc-omg3q" className={styles.faqLink}>
                 Xem checklist mua acc an toàn
               </Link>
               <Link href="/bang-gia-nick-omg3q" className={styles.faqLink}>
                 Tham khảo bảng giá
+              </Link>
+              <Link href="/quy-trinh-giao-dich" className={styles.faqLink}>
+                Quy trình giao dịch
               </Link>
             </div>
           </section>

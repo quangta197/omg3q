@@ -123,7 +123,7 @@ export default async function PricingPage() {
             </Link>
 
             <Link
-              href="/blog/cach-mua-nick-omg3q-an-toan"
+              href="/huong-dan-mua-acc-omg3q"
               className={styles.linkCard}
             >
               <strong>Cách mua acc an toàn</strong>

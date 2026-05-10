@@ -1,0 +1,117 @@
+.stack {
+  display: grid;
+  gap: 18px;
+  width: min(calc(100% - 32px), var(--container-width));
+  margin: 24px auto 0;
+}
+
+.panel {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: 24px;
+  background: var(--color-surface-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.panelHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: end;
+}
+
+.eyebrow {
+  color: var(--color-accent);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin-top: 8px;
+  color: var(--color-text);
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(1.5rem, 2.8vw, 2.15rem);
+  line-height: 1.08;
+}
+
+.text {
+  color: var(--color-text-soft);
+  line-height: 1.78;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.card {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--color-page-alt) 82%, white 18%);
+}
+
+.card strong {
+  color: var(--color-text);
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.card p {
+  color: var(--color-text-soft);
+  font-size: 0.9rem;
+  line-height: 1.68;
+}
+
+.list {
+  display: grid;
+  gap: 12px;
+  padding-left: 18px;
+  color: var(--color-text-soft);
+  line-height: 1.76;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.primaryLink,
+.secondaryLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-weight: 900;
+}
+
+.primaryLink {
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-strong));
+  color: white;
+}
+
+.secondaryLink {
+  border: 1px solid var(--color-border);
+  color: var(--color-text-soft);
+}
+
+@media (max-width: 900px) {
+  .panelHead {
+    flex-direction: column;
+    align-items: start;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

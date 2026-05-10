@@ -11,7 +11,7 @@
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
   min-height: 68px;
 }
 
@@ -44,18 +44,36 @@
 .nav {
   display: inline-flex;
   justify-content: center;
-  gap: 22px;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .navLink {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 2px;
   color: var(--color-text-soft);
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 0.86rem;
+  font-weight: 800;
   transition: color var(--transition-normal);
 }
 
-.navLink:hover {
+.navLink:hover,
+.navLinkActive {
   color: var(--color-text);
+}
+
+.navLinkActive::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  bottom: 2px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-strong));
 }
 
 .actions {
@@ -102,8 +120,7 @@
   }
 
   .nav {
-    flex-wrap: wrap;
-    gap: 18px;
+    gap: 14px;
   }
 }
 

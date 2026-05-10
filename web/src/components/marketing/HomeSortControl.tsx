@@ -30,6 +30,8 @@ export function HomeSortControl({
       params.set("sort", nextValue);
     }
 
+    params.delete("page");
+
     const query = params.toString();
     const nextUrl = query ? `${pathname}?${query}` : pathname;
 

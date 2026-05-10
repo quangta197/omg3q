@@ -105,9 +105,15 @@ export type PendingAdminImageUpload = {
 export type AdminAccountGalleryItemInput = {
   id?: string;
   path?: string;
+  fileKey?: string;
   caption?: string | null;
   sortOrder: number;
   isThumbnail?: boolean;
+};
+
+export type AdminAccountGalleryFileUpload = {
+  key: string;
+  file: File;
 };
 
 function toNumber(value: number | string | null | undefined) {
@@ -374,6 +380,126 @@ async function uploadImages(accountId: string, files: File[]) {
   }
 
   return uploadedImages;
+}
+
+export async function uploadAccountGalleryFiles(
+  accountId: string,
+  uploads: AdminAccountGalleryFileUpload[]
+) {
+  if (uploads.length === 0) {
+    return new Map<string, string>();
+  }
+
+  if (uploads.length > MAX_ADMIN_IMAGE_COUNT) {
+    throw new Error(`Chỉ được upload tối đa ${MAX_ADMIN_IMAGE_COUNT} ảnh mỗi lần.`);
+  }
+
+  const supabase = getSupabaseAdminClient();
+  const bucket = await ensureStorageBucketExists();
+  const batchId = `${Date.now()}-${crypto.randomUUID()}`;
+  const uploadedPaths = new Map<string, string>();
+
+  for (const [index, upload] of uploads.entries()) {
+    const { key, file } = upload;
+
+    if (!key) {
+      throw new Error(`Ảnh #${index + 1} thiếu mã upload.`);
+    }
+
+    if (uploadedPaths.has(key)) {
+      throw new Error("Danh sách ảnh có mã upload bị trùng.");
+    }
+
+    if (file.size <= 0) {
+      throw new Error(`Ảnh #${index + 1} không hợp lệ.`);
+    }
+
+    if (file.size > MAX_ADMIN_IMAGE_SIZE) {
+      throw new Error(
+        `Ảnh "${file.name || `#${index + 1}`}" vượt quá 10MB. Hãy nén nhỏ hơn rồi thử lại.`
+      );
+    }
+
+    if (file.type && !file.type.startsWith("image/")) {
+      throw new Error(`Tệp "${file.name || `#${index + 1}`}" không phải ảnh hợp lệ.`);
+    }
+
+    const extension = sanitizeFileExtension(file.name, file.type);
+    const filePath = `accounts/${accountId}/${batchId}/${index + 1}.${extension}`;
+    const arrayBuffer = await file.arrayBuffer();
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(filePath, Buffer.from(arrayBuffer), {
+        contentType: file.type || `image/${extension}`,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      throw new Error(uploadError.message);
+    }
+
+    uploadedPaths.set(key, filePath);
+  }
+
+  return uploadedPaths;
+}
+
+export async function uploadPendingAdminImageFiles(
+  files: File[]
+): Promise<PendingAdminImageUpload[]> {
+  if (files.length === 0) {
+    return [];
+  }
+
+  if (files.length > MAX_ADMIN_IMAGE_COUNT) {
+    throw new Error(`Chỉ được upload tối đa ${MAX_ADMIN_IMAGE_COUNT} ảnh mỗi lần.`);
+  }
+
+  const supabase = getSupabaseAdminClient();
+  const bucket = await ensureStorageBucketExists();
+  const batchId = `${Date.now()}-${crypto.randomUUID()}`;
+  const uploads: PendingAdminImageUpload[] = [];
+
+  for (const [index, file] of files.entries()) {
+    if (file.size <= 0) {
+      throw new Error(`Ảnh #${index + 1} không hợp lệ.`);
+    }
+
+    if (file.size > MAX_ADMIN_IMAGE_SIZE) {
+      throw new Error(
+        `Ảnh "${file.name || `#${index + 1}`}" vượt quá 10MB. Hãy nén nhỏ hơn rồi thử lại.`
+      );
+    }
+
+    if (file.type && !file.type.startsWith("image/")) {
+      throw new Error(`Tệp "${file.name || `#${index + 1}`}" không phải ảnh hợp lệ.`);
+    }
+
+    const extension = sanitizeFileExtension(file.name, file.type);
+    const path = `accounts/uploads/server/${batchId}/${index + 1}.${extension}`;
+    const arrayBuffer = await file.arrayBuffer();
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(path, Buffer.from(arrayBuffer), {
+        contentType: file.type || `image/${extension}`,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      throw new Error(uploadError.message);
+    }
+
+    const { data: publicUrlData } = supabase.storage.from(bucket).getPublicUrl(path);
+
+    uploads.push({
+      path,
+      token: "",
+      publicUrl: publicUrlData.publicUrl,
+      sortOrder: index,
+    });
+  }
+
+  return uploads;
 }
 
 type StoredAccountImage = {
@@ -800,6 +926,10 @@ export async function syncAccountGallery(
   accountId: string,
   images: AdminAccountGalleryItemInput[]
 ) {
+  if (images.some((image) => image.fileKey)) {
+    throw new Error("Ảnh upload qua server chưa được xử lý.");
+  }
+
   return syncStoredAccountImages(accountId, images);
 }
 

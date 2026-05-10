@@ -8,6 +8,7 @@ import {
   replaceAccountImages,
   replaceAccountImagesWithPendingUploads,
   syncAccountGallery,
+  uploadAccountGalleryFiles,
 } from "@/lib/admin-accounts";
 import { authorizeAdminApiRequest } from "@/lib/admin-session";
 import { getSupabaseAdminClient, hasSupabaseServiceRole } from "@/lib/supabase-admin";
@@ -114,18 +115,24 @@ function parseGalleryState(formData: FormData) {
     const row = item as Partial<AdminAccountGalleryItemInput>;
     const id = String(row.id || "").trim();
     const path = String(row.path || "").trim();
+    const fileKey = String(row.fileKey || "").trim();
     const sortOrder = Number(row.sortOrder ?? 0);
+    const referenceCount = [id, path, fileKey].filter(Boolean).length;
 
-    if (id && path) {
+    if (referenceCount > 1) {
       throw new Error("Mỗi ảnh chỉ được là ảnh cũ hoặc ảnh mới.");
     }
 
-    if (!id && !path) {
+    if (referenceCount === 0) {
       throw new Error("Gallery ảnh có phần tử không hợp lệ.");
     }
 
     if (path && !path.startsWith("accounts/")) {
       throw new Error("Đường dẫn ảnh upload không hợp lệ.");
+    }
+
+    if (fileKey && !/^gallery_file_[a-zA-Z0-9_-]+$/.test(fileKey)) {
+      throw new Error("Mã ảnh upload qua server không hợp lệ.");
     }
 
     if (!Number.isFinite(sortOrder)) {
@@ -135,6 +142,7 @@ function parseGalleryState(formData: FormData) {
     return {
       ...(id ? { id } : {}),
       ...(path ? { path } : {}),
+      ...(fileKey ? { fileKey } : {}),
       caption: typeof row.caption === "string" ? row.caption : null,
       sortOrder,
       isThumbnail: Boolean(row.isThumbnail),
@@ -146,6 +154,64 @@ function parseGalleryState(formData: FormData) {
   }
 
   return items.sort((left, right) => left.sortOrder - right.sortOrder);
+}
+
+function getServerGalleryUploadKeys(galleryState: AdminAccountGalleryItemInput[]) {
+  const uploadKeys = galleryState
+    .map((item) => item.fileKey?.trim())
+    .filter((value): value is string => Boolean(value));
+
+  if (new Set(uploadKeys).size !== uploadKeys.length) {
+    throw new Error("Danh sách ảnh upload qua server bị trùng.");
+  }
+
+  return uploadKeys;
+}
+
+async function resolveServerGalleryUploads(
+  accountId: string,
+  formData: FormData,
+  galleryState: AdminAccountGalleryItemInput[]
+) {
+  const uploadKeys = getServerGalleryUploadKeys(galleryState);
+
+  if (uploadKeys.length === 0) {
+    return galleryState;
+  }
+
+  const uploads = uploadKeys.map((key) => {
+    const value = formData.get(key);
+
+    if (!(value instanceof File) || value.size <= 0) {
+      throw new Error("Thiếu file ảnh upload qua server. Hãy chọn lại ảnh rồi lưu.");
+    }
+
+    return {
+      key,
+      file: value,
+    };
+  });
+
+  const uploadedPathMap = await uploadAccountGalleryFiles(accountId, uploads);
+
+  return galleryState.map((item) => {
+    if (!item.fileKey) {
+      return item;
+    }
+
+    const path = uploadedPathMap.get(item.fileKey);
+
+    if (!path) {
+      throw new Error("Không tìm thấy ảnh đã upload qua server.");
+    }
+
+    return {
+      path,
+      caption: item.caption,
+      sortOrder: item.sortOrder,
+      isThumbnail: item.isThumbnail,
+    } satisfies AdminAccountGalleryItemInput;
+  });
 }
 
 function validatePayload(formData: FormData) {
@@ -309,7 +375,12 @@ export async function PATCH(request: NextRequest, { params }: RouteProps) {
 
   try {
     if (hasStructuredGallery || galleryState.length > 0) {
-      await syncAccountGallery(id, galleryState);
+      const resolvedGalleryState = await resolveServerGalleryUploads(
+        id,
+        formData,
+        galleryState
+      );
+      await syncAccountGallery(id, resolvedGalleryState);
     } else if (uploadedImages.length > 0) {
       await replaceAccountImagesWithPendingUploads(id, uploadedImages);
     } else if (files.length > 0) {

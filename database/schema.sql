@@ -84,6 +84,15 @@ CREATE TABLE site_settings (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE site_visits (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    path VARCHAR(1000) NOT NULL,
+    referrer VARCHAR(1000),
+    visitor_id VARCHAR(120),
+    user_agent VARCHAR(1000),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE INDEX idx_accounts_server ON accounts(server_id) WHERE status = 'available';
 CREATE INDEX idx_accounts_nation ON accounts(nation_id) WHERE status = 'available';
 CREATE INDEX idx_accounts_power ON accounts(power_score) WHERE status = 'available';
@@ -96,6 +105,9 @@ CREATE INDEX idx_account_images_account ON account_images(account_id, sort_order
 CREATE INDEX idx_account_heroes_account ON account_heroes(account_id);
 CREATE INDEX idx_contact_requests_status ON contact_requests(status, created_at DESC);
 CREATE INDEX idx_contact_requests_account ON contact_requests(account_id);
+CREATE INDEX idx_site_visits_created ON site_visits(created_at DESC);
+CREATE INDEX idx_site_visits_path_created ON site_visits(path, created_at DESC);
+CREATE INDEX idx_site_visits_visitor_created ON site_visits(visitor_id, created_at DESC);
 
 ALTER TABLE accounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE account_images ENABLE ROW LEVEL SECURITY;
@@ -104,6 +116,7 @@ ALTER TABLE servers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE nations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contact_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE site_visits ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Public read accounts" ON accounts
     FOR SELECT USING (status IN ('available', 'reserved', 'sold'));

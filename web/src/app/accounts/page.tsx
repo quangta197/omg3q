@@ -333,7 +333,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
             Xem bảng giá
           </Link>
           <Link
-            href="/blog/cach-mua-nick-omg3q-an-toan"
+            href="/huong-dan-mua-acc-omg3q"
             className={styles.pageLinkSecondary}
           >
             Cách mua acc an toàn

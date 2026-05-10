@@ -1,11 +1,14 @@
 .page {
   display: grid;
   gap: 18px;
-  width: min(100%, 860px);
+  width: min(100%, var(--container-width));
   padding: 22px 0 0;
 }
 
 .frame {
+  display: grid;
+  grid-template-columns: minmax(0, 1.16fr) minmax(360px, 0.84fr);
+  align-items: start;
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: 24px;
@@ -16,7 +19,7 @@
 .content {
   display: grid;
   gap: 16px;
-  padding: 14px 16px 16px;
+  padding: 18px 18px 20px;
 }
 
 .badgeRow {
@@ -195,6 +198,25 @@
   line-height: 1.65;
 }
 
+.internalLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.internalLinks a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-page-alt) 84%, white 16%);
+  color: var(--color-text-soft);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
 .ctaBar {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -246,6 +268,38 @@
 
 .formSection {
   width: 100%;
+}
+
+.relatedSection {
+  display: grid;
+  gap: 16px;
+  padding: 20px 0 0;
+}
+
+.relatedHead {
+  display: grid;
+  gap: 6px;
+}
+
+.relatedEyebrow {
+  color: var(--color-accent);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.relatedTitle {
+  color: var(--color-text);
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(1.45rem, 2.5vw, 2rem);
+  line-height: 1.08;
+}
+
+@media (max-width: 940px) {
+  .frame {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 720px) {

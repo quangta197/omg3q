@@ -33,6 +33,15 @@ type GalleryImageItem = {
   file?: File;
 };
 
+type GalleryStateItem = {
+  id?: string;
+  path?: string;
+  fileKey?: string;
+  caption: string | null;
+  sortOrder: number;
+  isThumbnail: boolean;
+};
+
 type InitialAccountValues = {
   slug: string;
   title: string;
@@ -61,9 +70,9 @@ type AccountFormProps = {
 
 const MAX_GALLERY_IMAGE_COUNT = 20;
 const MAX_UPLOAD_ATTEMPTS = 3;
-const MAX_OPTIMIZED_IMAGE_DIMENSION = 1800;
-const IMAGE_OPTIMIZE_THRESHOLD_BYTES = 2.5 * 1024 * 1024;
-const OPTIMIZED_IMAGE_QUALITY = 0.82;
+const MAX_OPTIMIZED_IMAGE_DIMENSION = 1400;
+const IMAGE_OPTIMIZE_THRESHOLD_BYTES = 900 * 1024;
+const OPTIMIZED_IMAGE_QUALITY = 0.76;
 
 function slugify(value: string) {
   return value
@@ -77,6 +86,18 @@ function slugify(value: string) {
 
 function createGalleryClientId() {
   return `gallery-${crypto.randomUUID()}`;
+}
+
+function isMobileUploadContext() {
+  if (typeof navigator === "undefined") {
+    return false;
+  }
+
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+}
+
+function shouldUploadThroughServer(items: Array<GalleryImageItem & { file: File }>) {
+  return items.length > 1 || (items.length > 0 && isMobileUploadContext());
 }
 
 function buildInitialGalleryState(initialValues?: InitialAccountValues) {
@@ -292,7 +313,7 @@ function getSubmitErrorMessage(error: unknown) {
     normalizedMessage.includes("load failed") ||
     normalizedMessage.includes("networkerror")
   ) {
-    return "Kết nối upload bị gián đoạn trên mạng di động. Hãy thử lại, hệ thống sẽ tự tối ưu ảnh và upload lại ổn định hơn.";
+    return "Kết nối tới máy chủ bị gián đoạn khi gửi ảnh. Hãy giữ màn hình mở và thử lại; ảnh sẽ được tối ưu trước khi upload.";
   }
 
   return error.message;
@@ -408,16 +429,29 @@ export function AccountForm({
       return new Map<string, PendingUploadTicket>();
     }
 
+    const optimizedItems: Array<{
+      item: GalleryImageItem & { file: File };
+      file: File;
+    }> = [];
+
+    for (const [index, item] of items.entries()) {
+      setMessage(`Đang chuẩn bị ảnh ${index + 1}/${items.length}...`);
+      optimizedItems.push({
+        item,
+        file: await optimizeImageForUpload(item.file),
+      });
+    }
+
     const response = await fetch("/api/admin/uploads", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        files: items.map((item) => ({
-          name: item.file.name,
-          type: item.file.type,
-          size: item.file.size,
+        files: optimizedItems.map(({ file }) => ({
+          name: file.name,
+          type: file.type,
+          size: file.size,
         })),
       }),
     });
@@ -441,15 +475,89 @@ export function AccountForm({
     const bucket = data.bucket;
     const uploadedImages = new Map<string, PendingUploadTicket>();
 
-    for (const [index, item] of items.entries()) {
-      setMessage(`Đang tối ưu ảnh ${index + 1}/${items.length}...`);
-      const optimizedFile = await optimizeImageForUpload(item.file);
-
+    for (const [index, { item, file }] of optimizedItems.entries()) {
       setMessage(`Đang upload ảnh ${index + 1}/${items.length}...`);
       const target = data.uploads[index];
-      await uploadFileToSignedUrlWithRetry(supabase, bucket, target, optimizedFile);
+      await uploadFileToSignedUrlWithRetry(supabase, bucket, target, file);
 
       uploadedImages.set(item.clientId, target);
+    }
+
+    return uploadedImages;
+  }
+
+  async function uploadOneImageThroughServer(
+    item: GalleryImageItem & { file: File },
+    index: number,
+    total: number
+  ) {
+    setMessage(`Đang chuẩn bị ảnh ${index + 1}/${total}...`);
+    const optimizedFile = await optimizeImageForUpload(item.file);
+    let lastError: unknown;
+
+    for (let attempt = 1; attempt <= MAX_UPLOAD_ATTEMPTS; attempt += 1) {
+      try {
+        setMessage(`Đang upload ảnh ${index + 1}/${total} qua máy chủ...`);
+
+        const uploadFormData = new FormData();
+        uploadFormData.append("file", optimizedFile, optimizedFile.name);
+
+        const response = await fetch("/api/admin/uploads/server", {
+          method: "POST",
+          body: uploadFormData,
+        });
+        let data: {
+          success?: boolean;
+          upload?: PendingUploadTicket;
+          message?: string;
+        };
+
+        try {
+          data = (await response.json()) as typeof data;
+        } catch {
+          data = {
+            message: response.ok
+              ? "Phản hồi upload ảnh không hợp lệ."
+              : `Upload ảnh thất bại (${response.status}).`,
+          };
+        }
+
+        if (response.ok && data.success && data.upload?.path) {
+          return {
+            ...data.upload,
+            sortOrder: index,
+          };
+        }
+
+        lastError = new Error(data.message || "Không thể upload ảnh qua máy chủ.");
+
+        if (response.status < 500 && response.status !== 429) {
+          break;
+        }
+      } catch (uploadError) {
+        lastError = uploadError;
+
+        if (!isRetryableUploadError(uploadError)) {
+          break;
+        }
+      }
+
+      if (attempt < MAX_UPLOAD_ATTEMPTS) {
+        await waitForUploadRetry(attempt * 1500);
+      }
+    }
+
+    throw lastError instanceof Error
+      ? lastError
+      : new Error("Không thể upload ảnh qua máy chủ.");
+  }
+
+  async function uploadImagesThroughServer(items: Array<GalleryImageItem & { file: File }>) {
+    const uploadedImages = new Map<string, PendingUploadTicket>();
+
+    for (const [index, item] of items.entries()) {
+      const uploadedImage = await uploadOneImageThroughServer(item, index, items.length);
+      uploadedImages.set(item.clientId, uploadedImage);
     }
 
     return uploadedImages;
@@ -563,9 +671,16 @@ export function AccountForm({
 
     try {
       const newGalleryItems = galleryItems.filter(isNewGalleryImage);
-      const uploadedImages = await uploadImagesDirectly(newGalleryItems);
+      const uploadThroughServer = shouldUploadThroughServer(newGalleryItems);
 
-      const galleryState = galleryItems.map((item, index) => {
+      formData.delete("images");
+      formData.delete("uploaded_images");
+
+      const uploadedImages = uploadThroughServer
+        ? await uploadImagesThroughServer(newGalleryItems)
+        : await uploadImagesDirectly(newGalleryItems);
+
+      const galleryState: GalleryStateItem[] = galleryItems.map((item, index) => {
         if (item.existingId) {
           return {
             id: item.existingId,
@@ -589,9 +704,12 @@ export function AccountForm({
         };
       });
 
-      formData.delete("images");
-      formData.delete("uploaded_images");
       formData.set("gallery_state", JSON.stringify(galleryState));
+      setMessage(
+        newGalleryItems.length > 0
+          ? "Đang gửi ảnh và lưu tài khoản..."
+          : "Đang lưu tài khoản..."
+      );
 
       const response = await fetch(
         mode === "create" ? "/api/admin/accounts" : `/api/admin/accounts/${accountId}`,

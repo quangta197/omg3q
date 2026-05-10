@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google";
+import { VisitTracker } from "@/components/analytics/VisitTracker";
 import { FloatingContact } from "@/components/chrome/FloatingContact";
 import { SiteFooter } from "@/components/chrome/SiteFooter";
 import { SiteHeader } from "@/components/chrome/SiteHeader";
@@ -63,6 +64,7 @@ export default function RootLayout({
         />
         <JsonLd data={buildOrganizationSchema()} />
         <JsonLd data={buildWebsiteSchema()} />
+        <VisitTracker />
         <div className="siteShell">
           <SiteHeader />
           <div className="siteContent">{children}</div>
