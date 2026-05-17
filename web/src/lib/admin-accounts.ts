@@ -1,5 +1,15 @@
 import { getServers, getNations } from "@/lib/accounts";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
+import {
+  assertR2Configured,
+  extractR2ObjectPath,
+  extractSupabaseStoragePath,
+  getR2BucketName,
+  getR2PublicUrl,
+  isR2StorageEnabled,
+  removeR2Objects,
+  uploadR2Object,
+} from "@/lib/object-storage";
 import type { NationOption, ServerOption } from "@/lib/types";
 
 type RelationRecord =
@@ -211,10 +221,17 @@ function normalizeAdminSort(sort?: AdminAccountListFilters["sort"]) {
 }
 
 function getStorageBucketName() {
-  return process.env.SUPABASE_STORAGE_BUCKET || "account-images";
+  return isR2StorageEnabled()
+    ? getR2BucketName()
+    : process.env.SUPABASE_STORAGE_BUCKET || "account-images";
 }
 
 export async function ensureStorageBucketExists() {
+  if (isR2StorageEnabled()) {
+    assertR2Configured();
+    return getStorageBucketName();
+  }
+
   const supabase = getSupabaseAdminClient();
   const bucket = getStorageBucketName();
   const { data: buckets, error: listError } = await supabase.storage.listBuckets();
@@ -245,6 +262,51 @@ const MAX_ADMIN_IMAGE_SIZE = 10 * 1024 * 1024;
 const MAX_ADMIN_IMAGE_COUNT = 20;
 const STORAGE_IMAGE_CACHE_CONTROL_SECONDS = "31536000";
 
+async function uploadStorageObject({
+  path,
+  body,
+  contentType,
+}: {
+  path: string;
+  body: Buffer;
+  contentType?: string;
+}) {
+  const bucket = await ensureStorageBucketExists();
+
+  if (isR2StorageEnabled()) {
+    return uploadR2Object({
+      path,
+      body,
+      contentType,
+    });
+  }
+
+  const supabase = getSupabaseAdminClient();
+  const { error } = await supabase.storage.from(bucket).upload(path, body, {
+    contentType,
+    upsert: false,
+    cacheControl: STORAGE_IMAGE_CACHE_CONTROL_SECONDS,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return {
+    bucket,
+    path,
+    publicUrl: supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl,
+  };
+}
+
+function getStoragePublicUrl(path: string, bucket: string) {
+  if (isR2StorageEnabled()) {
+    return getR2PublicUrl(path);
+  }
+
+  return getSupabaseAdminClient().storage.from(bucket).getPublicUrl(path).data.publicUrl;
+}
+
 function sanitizeFileExtension(fileName: string, contentType?: string) {
   const extensionFromName = fileName.split(".").pop()?.toLowerCase() ?? "";
   const normalizedNameExtension = extensionFromName.replace(/[^a-z0-9]/g, "");
@@ -273,6 +335,10 @@ export async function createPendingAdminImageUploads(
   bucket: string;
   uploads: PendingAdminImageUpload[];
 }> {
+  if (isR2StorageEnabled()) {
+    throw new Error("R2 uploads must go through the server upload endpoint.");
+  }
+
   if (files.length === 0) {
     return {
       bucket: await ensureStorageBucketExists(),
@@ -331,25 +397,10 @@ export async function createPendingAdminImageUploads(
 }
 
 function extractStoragePath(url: string, bucket: string) {
-  try {
-    const parsedUrl = new URL(url);
-    const marker = `/storage/v1/object/public/${bucket}/`;
-    const index = parsedUrl.pathname.indexOf(marker);
-
-    if (index === -1) {
-      return null;
-    }
-
-    return decodeURIComponent(parsedUrl.pathname.slice(index + marker.length));
-  } catch {
-    return null;
-  }
+  return extractR2ObjectPath(url) ?? extractSupabaseStoragePath(url, bucket);
 }
 
 async function uploadImages(accountId: string, files: File[]) {
-  const supabase = getSupabaseAdminClient();
-  const bucket = await ensureStorageBucketExists();
-
   const uploadedImages: Array<{
     imageUrl: string;
     caption: string | null;
@@ -360,22 +411,14 @@ async function uploadImages(accountId: string, files: File[]) {
     const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
     const filePath = `accounts/${accountId}/${Date.now()}-${index}.${extension}`;
     const arrayBuffer = await file.arrayBuffer();
-    const { error: uploadError } = await supabase.storage
-      .from(bucket)
-      .upload(filePath, Buffer.from(arrayBuffer), {
-        contentType: file.type || `image/${extension}`,
-        upsert: false,
-        cacheControl: STORAGE_IMAGE_CACHE_CONTROL_SECONDS,
-      });
-
-    if (uploadError) {
-      throw new Error(uploadError.message);
-    }
-
-    const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
+    const uploadedObject = await uploadStorageObject({
+      path: filePath,
+      body: Buffer.from(arrayBuffer),
+      contentType: file.type || `image/${extension}`,
+    });
 
     uploadedImages.push({
-      imageUrl: data.publicUrl,
+      imageUrl: uploadedObject.publicUrl,
       caption: null,
       sortOrder: index,
     });
@@ -396,8 +439,6 @@ export async function uploadAccountGalleryFiles(
     throw new Error(`Chỉ được upload tối đa ${MAX_ADMIN_IMAGE_COUNT} ảnh mỗi lần.`);
   }
 
-  const supabase = getSupabaseAdminClient();
-  const bucket = await ensureStorageBucketExists();
   const batchId = `${Date.now()}-${crypto.randomUUID()}`;
   const uploadedPaths = new Map<string, string>();
 
@@ -429,17 +470,11 @@ export async function uploadAccountGalleryFiles(
     const extension = sanitizeFileExtension(file.name, file.type);
     const filePath = `accounts/${accountId}/${batchId}/${index + 1}.${extension}`;
     const arrayBuffer = await file.arrayBuffer();
-    const { error: uploadError } = await supabase.storage
-      .from(bucket)
-      .upload(filePath, Buffer.from(arrayBuffer), {
-        contentType: file.type || `image/${extension}`,
-        upsert: false,
-        cacheControl: STORAGE_IMAGE_CACHE_CONTROL_SECONDS,
-      });
-
-    if (uploadError) {
-      throw new Error(uploadError.message);
-    }
+    await uploadStorageObject({
+      path: filePath,
+      body: Buffer.from(arrayBuffer),
+      contentType: file.type || `image/${extension}`,
+    });
 
     uploadedPaths.set(key, filePath);
   }
@@ -458,8 +493,6 @@ export async function uploadPendingAdminImageFiles(
     throw new Error(`Chỉ được upload tối đa ${MAX_ADMIN_IMAGE_COUNT} ảnh mỗi lần.`);
   }
 
-  const supabase = getSupabaseAdminClient();
-  const bucket = await ensureStorageBucketExists();
   const batchId = `${Date.now()}-${crypto.randomUUID()}`;
   const uploads: PendingAdminImageUpload[] = [];
 
@@ -481,24 +514,16 @@ export async function uploadPendingAdminImageFiles(
     const extension = sanitizeFileExtension(file.name, file.type);
     const path = `accounts/uploads/server/${batchId}/${index + 1}.${extension}`;
     const arrayBuffer = await file.arrayBuffer();
-    const { error: uploadError } = await supabase.storage
-      .from(bucket)
-      .upload(path, Buffer.from(arrayBuffer), {
-        contentType: file.type || `image/${extension}`,
-        upsert: false,
-        cacheControl: STORAGE_IMAGE_CACHE_CONTROL_SECONDS,
-      });
-
-    if (uploadError) {
-      throw new Error(uploadError.message);
-    }
-
-    const { data: publicUrlData } = supabase.storage.from(bucket).getPublicUrl(path);
+    const uploadedObject = await uploadStorageObject({
+      path,
+      body: Buffer.from(arrayBuffer),
+      contentType: file.type || `image/${extension}`,
+    });
 
     uploads.push({
       path,
       token: "",
-      publicUrl: publicUrlData.publicUrl,
+      publicUrl: uploadedObject.publicUrl,
       sortOrder: index,
     });
   }
@@ -611,7 +636,7 @@ async function syncStoredAccountImages(
       continue;
     }
 
-    const publicUrl = supabase.storage.from(bucket).getPublicUrl(image.path).data.publicUrl;
+    const publicUrl = getStoragePublicUrl(image.path, bucket);
 
     imagesToInsert.push({
       account_id: accountId,
@@ -665,12 +690,19 @@ async function syncStoredAccountImages(
     throw new Error(updateThumbnailError.message);
   }
 
-  const oldPaths = removedImages
-    .map((image) => extractStoragePath(image.image_url as string, bucket))
+  const oldR2Paths = removedImages
+    .map((image) => extractR2ObjectPath(image.image_url as string))
+    .filter((path): path is string => Boolean(path));
+  const oldSupabasePaths = removedImages
+    .map((image) => extractSupabaseStoragePath(image.image_url as string, bucket))
     .filter((path): path is string => Boolean(path));
 
-  if (oldPaths.length > 0) {
-    await supabase.storage.from(bucket).remove(oldPaths);
+  if (oldSupabasePaths.length > 0) {
+    await supabase.storage.from(bucket).remove(oldSupabasePaths);
+  }
+
+  if (oldR2Paths.length > 0) {
+    await removeR2Objects(oldR2Paths);
   }
 
   return finalImages.map((image) => ({

@@ -89,16 +89,8 @@ function createGalleryClientId() {
   return `gallery-${crypto.randomUUID()}`;
 }
 
-function isMobileUploadContext() {
-  if (typeof navigator === "undefined") {
-    return false;
-  }
-
-  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-}
-
 function shouldUploadThroughServer(items: Array<GalleryImageItem & { file: File }>) {
-  return items.length > 1 || (items.length > 0 && isMobileUploadContext());
+  return items.length > 0;
 }
 
 function buildInitialGalleryState(initialValues?: InitialAccountValues) {

@@ -5,5 +5,6 @@ web/.turbo/
 web/.git.create-next-app/
 web/.env*
 !web/.env.example
+backups/
 .DS_Store
 Thumbs.db
