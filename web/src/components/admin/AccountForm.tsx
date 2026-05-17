@@ -70,9 +70,10 @@ type AccountFormProps = {
 
 const MAX_GALLERY_IMAGE_COUNT = 20;
 const MAX_UPLOAD_ATTEMPTS = 3;
-const MAX_OPTIMIZED_IMAGE_DIMENSION = 1400;
-const IMAGE_OPTIMIZE_THRESHOLD_BYTES = 900 * 1024;
-const OPTIMIZED_IMAGE_QUALITY = 0.76;
+const MAX_OPTIMIZED_IMAGE_DIMENSION = 1200;
+const IMAGE_OPTIMIZE_THRESHOLD_BYTES = 500 * 1024;
+const OPTIMIZED_IMAGE_QUALITY = 0.72;
+const STORAGE_IMAGE_CACHE_CONTROL_SECONDS = "31536000";
 
 function slugify(value: string) {
   return value
@@ -282,6 +283,7 @@ async function uploadFileToSignedUrlWithRetry(
         .uploadToSignedUrl(target.path, target.token, file, {
           upsert: false,
           contentType: file.type || undefined,
+          cacheControl: STORAGE_IMAGE_CACHE_CONTROL_SECONDS,
         });
 
       if (!error) {

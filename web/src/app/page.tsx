@@ -305,7 +305,6 @@ export default async function Home({ searchParams }: HomePageProps) {
                                     fill
                                     className={styles.spotlightImage}
                                     sizes="(max-width: 820px) 100vw, 340px"
-                                    unoptimized
                                   />
                                 ) : null}
                                 <span className={styles.spotlightBadge}>
@@ -345,7 +344,6 @@ export default async function Home({ searchParams }: HomePageProps) {
                                         fill
                                         className={styles.miniCardImage}
                                         sizes="(max-width: 820px) 50vw, 180px"
-                                        unoptimized
                                       />
                                     ) : null}
                                   </div>

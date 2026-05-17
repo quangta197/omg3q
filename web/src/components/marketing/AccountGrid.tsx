@@ -41,7 +41,6 @@ export function AccountGrid({
                 fill
                 sizes="(max-width: 900px) 100vw, (max-width: 1180px) 33vw, 25vw"
                 className={styles.mediaImageTag}
-                unoptimized
               />
             ) : null}
 

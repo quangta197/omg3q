@@ -42,7 +42,6 @@ export function AccountGallery({ title, images }: AccountGalleryProps) {
             alt={activeImage.caption || title}
             fill
             sizes="(max-width: 900px) 100vw, 820px"
-            unoptimized
             className={styles.stageImage}
           />
         ) : null}
@@ -73,7 +72,6 @@ export function AccountGallery({ title, images }: AccountGalleryProps) {
               alt={image.caption || `${title} - ảnh ${index + 1}`}
               fill
               sizes="72px"
-              unoptimized
               className={styles.thumbImage}
             />
             {/* <span className={styles.thumbLabel}>Ảnh {index + 1}</span> */}

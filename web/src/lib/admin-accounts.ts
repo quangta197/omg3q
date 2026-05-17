@@ -243,6 +243,7 @@ export async function ensureStorageBucketExists() {
 
 const MAX_ADMIN_IMAGE_SIZE = 10 * 1024 * 1024;
 const MAX_ADMIN_IMAGE_COUNT = 20;
+const STORAGE_IMAGE_CACHE_CONTROL_SECONDS = "31536000";
 
 function sanitizeFileExtension(fileName: string, contentType?: string) {
   const extensionFromName = fileName.split(".").pop()?.toLowerCase() ?? "";
@@ -364,6 +365,7 @@ async function uploadImages(accountId: string, files: File[]) {
       .upload(filePath, Buffer.from(arrayBuffer), {
         contentType: file.type || `image/${extension}`,
         upsert: false,
+        cacheControl: STORAGE_IMAGE_CACHE_CONTROL_SECONDS,
       });
 
     if (uploadError) {
@@ -432,6 +434,7 @@ export async function uploadAccountGalleryFiles(
       .upload(filePath, Buffer.from(arrayBuffer), {
         contentType: file.type || `image/${extension}`,
         upsert: false,
+        cacheControl: STORAGE_IMAGE_CACHE_CONTROL_SECONDS,
       });
 
     if (uploadError) {
@@ -483,6 +486,7 @@ export async function uploadPendingAdminImageFiles(
       .upload(path, Buffer.from(arrayBuffer), {
         contentType: file.type || `image/${extension}`,
         upsert: false,
+        cacheControl: STORAGE_IMAGE_CACHE_CONTROL_SECONDS,
       });
 
     if (uploadError) {
