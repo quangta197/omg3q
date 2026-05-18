@@ -50,18 +50,14 @@ export default function RootLayout({
       className={`${inter.variable} ${outfit.variable}`}
       suppressHydrationWarning
     >
-      <body>
+      <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `
-              (() => {
-                const storedTheme = localStorage.getItem("theme");
-                const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-                document.documentElement.dataset.theme = storedTheme || systemTheme;
-              })();
-            `,
+            __html: `(function(){try{var t=localStorage.getItem("theme");var s=window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";document.documentElement.dataset.theme=t||s}catch(e){}})()`,
           }}
         />
+      </head>
+      <body>
         <JsonLd data={buildOrganizationSchema()} />
         <JsonLd data={buildWebsiteSchema()} />
         <VisitTracker />

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import styles from "./SiteHeader.module.css";
 
@@ -31,18 +32,46 @@ function isNavItemActive(pathname: string, href: string) {
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [lastPathname, setLastPathname] = useState(pathname);
+
+  if (lastPathname !== pathname) {
+    setLastPathname(pathname);
+    if (isMenuOpen) {
+      setIsMenuOpen(false);
+    }
+  }
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    if (isMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMenuOpen]);
 
   return (
     <header className={styles.header}>
       <div className={`container ${styles.inner}`}>
-        <Link href="/" className={styles.brand}>
+        <Link href="/" className={styles.brand} onClick={() => setIsMenuOpen(false)}>
           <span className={styles.logoMark}>S</span>
           <span className={styles.logoText}>
             OMG<span>3Q</span> Shop
           </span>
         </Link>
 
-        <nav className={styles.nav} aria-label="Điều hướng chính">
+        <nav
+          className={`${styles.nav} ${isMenuOpen ? styles.navOpen : ""}`}
+          aria-label="Điều hướng chính"
+        >
           {navItems.map((item) => {
             const isActive = isNavItemActive(pathname, item.href);
 
@@ -52,11 +81,20 @@ export function SiteHeader() {
                 href={item.href}
                 className={`${styles.navLink} ${isActive ? styles.navLinkActive : ""}`}
                 aria-current={isActive ? "page" : undefined}
+                onClick={() => setIsMenuOpen(false)}
               >
                 {item.label}
               </Link>
             );
           })}
+
+          <Link
+            href="/lien-he"
+            className={`${styles.primaryAction} ${styles.primaryActionMobile}`}
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Liên Hệ
+          </Link>
         </nav>
 
         <div className={styles.actions}>
@@ -64,7 +102,28 @@ export function SiteHeader() {
           <Link href="/lien-he" className={styles.primaryAction}>
             Liên Hệ
           </Link>
+          <button
+            type="button"
+            className={`${styles.menuToggle} ${isMenuOpen ? styles.menuToggleOpen : ""}`}
+            aria-label={isMenuOpen ? "Đóng menu" : "Mở menu"}
+            aria-expanded={isMenuOpen}
+            aria-controls="site-primary-nav"
+            onClick={() => setIsMenuOpen((open) => !open)}
+          >
+            <span aria-hidden="true" />
+            <span aria-hidden="true" />
+            <span aria-hidden="true" />
+          </button>
         </div>
+
+        {isMenuOpen ? (
+          <button
+            type="button"
+            className={styles.backdrop}
+            aria-label="Đóng menu"
+            onClick={() => setIsMenuOpen(false)}
+          />
+        ) : null}
       </div>
     </header>
   );
